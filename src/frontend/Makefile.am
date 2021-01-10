@@ -79,7 +79,7 @@ gg_create_thunk_LDADD = $(BASE_LDADD) $(CRYPTO_LIBS)
 # I do not know why we need libggnet.a here.
 gg_create_thunk_static_SOURCES = gg-create-thunk.cc
 gg_create_thunk_static_LDADD = $(BASE_LDADD) $(CRYPTO_LIBS) $(SSL_LIBS) -ldl
-gg_create_thunk_static_LDFLAGS = -static -Wl,--whole-archive ../net/libggnet.a -Wl,--no-whole-archive
+gg_create_thunk_static_LDFLAGS = -static -Wl,--whole-archive ../net/libggnet.a -lpthread -Wl,--no-whole-archive
 
 gg_s3_upload_SOURCES = gg-s3-upload.cc
 gg_s3_upload_LDADD = $(BASE_LDADD) $(CRYPTO_LIBS) $(SSL_LIBS)
