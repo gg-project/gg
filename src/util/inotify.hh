@@ -1,17 +1,18 @@
-#ifndef INOTIFY_HH
-#define INOTIFY_HH
+#pragma once
 
-#include <sys/inotify.h>
 #include <cstdint>
-#include <vector>
-#include <string>
-#include <unordered_map>
 #include <functional>
+#include <string>
+#include <sys/inotify.h>
 #include <tuple>
+#include <unordered_map>
+#include <vector>
 
 #include "file_descriptor.hh"
-#include "poller.hh"
 #include "path.hh"
+#include "poller.hh"
+
+namespace gg {
 
 /* wrapper class for inotify */
 class Inotify
@@ -19,23 +20,23 @@ class Inotify
 public:
   /* callback function type
    * parameter list: inotify event, the path that triggers the event */
-  using callback_t = std::function<void(const inotify_event &,
-                                        const roost::path &)>;
+  using callback_t
+    = std::function<void( const inotify_event&, const roost::path& )>;
 
-  Inotify(Poller & poller);
+  Inotify( Poller& poller );
 
   /* add a single path to the watch list */
-  int add_watch(const roost::path & path,
-                const uint32_t mask,
-                const callback_t & callback);
+  int add_watch( const roost::path& path,
+                 const uint32_t mask,
+                 const callback_t& callback );
 
   /* add multiple paths to the watch list */
-  std::vector<int> add_watch(const std::vector<roost::path> & paths,
-                             const uint32_t mask,
-                             const callback_t & callback);
+  std::vector<int> add_watch( const std::vector<roost::path>& paths,
+                              const uint32_t mask,
+                              const callback_t& callback );
 
   /* remove a watch descriptor from the watch list */
-  void rm_watch(const int wd);
+  void rm_watch( const int wd );
 
 private:
   /* inotify instance */
@@ -48,4 +49,4 @@ private:
   Poller::Action::Result handle_events();
 };
 
-#endif /* INOTIFY_HH */
+} // namespace gg

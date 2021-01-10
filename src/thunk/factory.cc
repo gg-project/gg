@@ -5,8 +5,8 @@
 #include <algorithm>
 #include <chrono>
 #include <deque>
-#include <sys/stat.h>
 #include <fcntl.h>
+#include <sys/stat.h>
 
 #include "ggutils.hh"
 #include "manifest.hh"
@@ -20,41 +20,42 @@
 #include "util/tokenize.hh"
 
 using namespace std;
-using namespace std::chrono;
+using namespace chrono;
 using namespace gg;
-using namespace gg::thunk;
+using namespace thunk;
 
-ThunkFactory::Data::Data( const string & filename,
-                          const string & real_filename,
-                          const ObjectType & type,
-                          const string & hash )
-  : filename_( roost::path( filename ).lexically_normal().string() ),
-    real_filename_( ( real_filename.length() ) ? real_filename : filename_ ),
-    hash_( hash ), type_( type )
+ThunkFactory::Data::Data( const string& filename,
+                          const string& real_filename,
+                          const ObjectType& type,
+                          const string& hash )
+  : filename_( roost::path( filename ).lexically_normal().string() )
+  , real_filename_( ( real_filename.length() ) ? real_filename : filename_ )
+  , hash_( hash )
+  , type_( type )
 {
   if ( hash_.length() ) {
     return;
   }
 
-  Optional<ThunkPlaceholder> placeholder = ThunkPlaceholder::read( real_filename_ );
+  Optional<ThunkPlaceholder> placeholder
+    = ThunkPlaceholder::read( real_filename_ );
 
   if ( placeholder.initialized() ) {
     type_ = ObjectType::Thunk;
     hash_ = placeholder->content_hash();
-  }
-  else {
+  } else {
     type_ = type;
     hash_ = gg::hash::file( real_filename_, { true, type_ } );
   }
 }
 
-Thunk ThunkFactory::create_thunk( const Function & function,
-                                  const vector<Data> & data,
-                                  const vector<Data> & executables,
-                                  const vector<Output> & outputs,
-                                  const milliseconds & timeout,
+Thunk ThunkFactory::create_thunk( const Function& function,
+                                  const vector<Data>& data,
+                                  const vector<Data>& executables,
+                                  const vector<Output>& outputs,
+                                  const milliseconds& timeout,
                                   const bool include_filenames,
-                                  const map<string, string> & links )
+                                  const map<string, string>& links )
 {
   vector<Thunk::DataItem> thunk_data;
   vector<Thunk::DataItem> thunk_executables;
@@ -62,41 +63,43 @@ Thunk ThunkFactory::create_thunk( const Function & function,
 
   thunk::Function thunk_function { function };
 
-  for ( const Data & datum : data ) {
-    thunk_data.emplace_back( datum.hash(), include_filenames ? datum.filename()
-                                                             : string {} );
+  for ( const Data& datum : data ) {
+    thunk_data.emplace_back( datum.hash(),
+                             include_filenames ? datum.filename() : string {} );
   }
 
-  for ( const Data & datum : executables ) {
-    thunk_executables.emplace_back( datum.hash(), include_filenames ? datum.filename()
-                                                                    : string {} );
+  for ( const Data& datum : executables ) {
+    thunk_executables.emplace_back(
+      datum.hash(), include_filenames ? datum.filename() : string {} );
   }
 
-  for ( const Output & output : outputs ) {
+  for ( const Output& output : outputs ) {
     thunk_outputs.push_back( output.tag() );
   }
 
-  Thunk output_thunk { move( thunk_function ), move( thunk_data ),
-                       move( thunk_executables ), move( thunk_outputs ) };
+  Thunk output_thunk { move( thunk_function ),
+                       move( thunk_data ),
+                       move( thunk_executables ),
+                       move( thunk_outputs ) };
 
   output_thunk.set_timeout( timeout );
 
-  for ( auto & link : links ) {
+  for ( auto& link : links ) {
     output_thunk.add_link( link.first, link.second );
   }
 
   return output_thunk;
 }
 
-template<template <class...> class Container>
-string ThunkFactory::generate( const Function & function,
-                               const Container<Data> & data,
-                               const Container<Data> & executables,
-                               const Container<Output> & outputs,
-                               const Container<string> & dummy_dirs,
-                               const milliseconds & timeout,
+template<template<class...> class Container>
+string ThunkFactory::generate( const Function& function,
+                               const Container<Data>& data,
+                               const Container<Data>& executables,
+                               const Container<Output>& outputs,
+                               const Container<string>& dummy_dirs,
+                               const milliseconds& timeout,
                                const int options,
-                               const map<string, string> & links )
+                               const map<string, string>& links )
 {
   const bool generate_manifest = options & Options::generate_manifest;
   const bool create_placeholder = options & Options::create_placeholder;
@@ -109,68 +112,76 @@ string ThunkFactory::generate( const Function & function,
 
   thunk::Function thunk_function { function };
 
-  for ( const Data & datum : data ) {
-    thunk_data.emplace_back( datum.hash(), include_filenames ? datum.filename()
-                                                             : string {} );
+  for ( const Data& datum : data ) {
+    thunk_data.emplace_back( datum.hash(),
+                             include_filenames ? datum.filename() : string {} );
   }
 
-  for ( const Data & datum : executables ) {
-    thunk_executables.emplace_back( datum.hash(), include_filenames ? datum.filename()
-                                                                    : string {} );
+  for ( const Data& datum : executables ) {
+    thunk_executables.emplace_back(
+      datum.hash(), include_filenames ? datum.filename() : string {} );
   }
 
-  for ( const Output & output : outputs ) {
+  for ( const Output& output : outputs ) {
     thunk_outputs.push_back( output.tag() );
   }
 
   if ( generate_manifest ) {
     FileManifest manifest;
 
-    for ( const string & dir : dummy_dirs ) {
-      manifest.add_dummy_directory( roost::path( dir ).lexically_normal().string() );
+    for ( const string& dir : dummy_dirs ) {
+      manifest.add_dummy_directory(
+        roost::path( dir ).lexically_normal().string() );
     }
 
-    for ( const Output & output : outputs ) {
+    for ( const Output& output : outputs ) {
       if ( output.filename().initialized() ) {
         manifest.add_output_tag( *output.filename(), output.tag() );
       }
     }
 
     string manifest_data = manifest.serialize();
-    string manifest_hash = gg::hash::compute( manifest_data,
-                                              ObjectType::Value );
+    string manifest_hash
+      = gg::hash::compute( manifest_data, ObjectType::Value );
     thunk_data.emplace_back( manifest_hash, string {} );
-    roost::atomic_create( manifest_data,
-                          gg::paths::blob( manifest_hash ), true, 0400 );
-    thunk_function.envars().push_back( "GG_MANIFEST=" + thunk::data_placeholder( manifest_hash ) );
+    roost::atomic_create(
+      manifest_data, gg::paths::blob( manifest_hash ), true, 0400 );
+    thunk_function.envars().push_back(
+      "GG_MANIFEST=" + thunk::data_placeholder( manifest_hash ) );
   }
 
   if ( collect_data ) {
-    auto fn_collect =
-      [] ( const Data & datum, const bool executable )
-      {
-        if ( datum.real_filename().length() == 0 ) {
-          return;
-        }
+    auto fn_collect = []( const Data& datum, const bool executable ) {
+      if ( datum.real_filename().length() == 0 ) {
+        return;
+      }
 
-        roost::path source_path = datum.real_filename();
-        roost::path target_path = gg::paths::blob( gg::hash::base( datum.hash() ) );
+      roost::path source_path = datum.real_filename();
+      roost::path target_path
+        = gg::paths::blob( gg::hash::base( datum.hash() ) );
 
-        if ( not roost::exists( target_path ) ) {
-          roost::copy_then_rename( source_path, target_path, true, executable ? 0500 : 0400 );
-        }
-      };
+      if ( not roost::exists( target_path ) ) {
+        roost::copy_then_rename(
+          source_path, target_path, true, executable ? 0500 : 0400 );
+      }
+    };
 
-    for ( const Data & datum : data ) { fn_collect( datum, false ); }
-    for ( const Data & datum : executables ) { fn_collect( datum, true ); }
+    for ( const Data& datum : data ) {
+      fn_collect( datum, false );
+    }
+    for ( const Data& datum : executables ) {
+      fn_collect( datum, true );
+    }
   }
 
-  Thunk output_thunk { move( thunk_function ), move( thunk_data ),
-                       move( thunk_executables ), move( thunk_outputs ) };
+  Thunk output_thunk { move( thunk_function ),
+                       move( thunk_data ),
+                       move( thunk_executables ),
+                       move( thunk_outputs ) };
 
   output_thunk.set_timeout( timeout );
 
-  for ( auto & link : links ) {
+  for ( auto& link : links ) {
     output_thunk.add_link( link.first, link.second );
   }
 
@@ -178,15 +189,15 @@ string ThunkFactory::generate( const Function & function,
 
   if ( create_placeholder ) {
     for ( size_t i = 0; i < outputs.size(); i++ ) {
-      const Output & output = outputs.at( i );
+      const Output& output = outputs.at( i );
 
-      const string output_hash = ( i == 0 ) ? hash : gg::hash::for_output( hash, output.tag() );
+      const string output_hash
+        = ( i == 0 ) ? hash : gg::hash::for_output( hash, output.tag() );
       ThunkPlaceholder placeholder { output_hash };
 
       if ( output.filename().initialized() ) {
         placeholder.write( *output.filename() );
-      }
-      else {
+      } else {
         placeholder.write( output.tag() );
       }
     }
@@ -195,20 +206,20 @@ string ThunkFactory::generate( const Function & function,
   return hash;
 }
 
-template string ThunkFactory::generate( const Function &,
-                                        const vector<Data> &,
-                                        const vector<Data> &,
-                                        const vector<Output> &,
-                                        const vector<string> &,
-                                        const milliseconds &,
+template string ThunkFactory::generate( const Function&,
+                                        const vector<Data>&,
+                                        const vector<Data>&,
+                                        const vector<Output>&,
+                                        const vector<string>&,
+                                        const milliseconds&,
                                         const int,
-                                        const map<string, string> & );
+                                        const map<string, string>& );
 
-template string ThunkFactory::generate( const Function &,
-                                        const deque<Data> &,
-                                        const deque<Data> &,
-                                        const deque<Output> &,
-                                        const deque<string> &,
-                                        const milliseconds &,
+template string ThunkFactory::generate( const Function&,
+                                        const deque<Data>&,
+                                        const deque<Data>&,
+                                        const deque<Output>&,
+                                        const deque<string>&,
+                                        const milliseconds&,
                                         const int,
-                                        const map<string, string> & );
+                                        const map<string, string>& );

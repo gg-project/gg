@@ -1,28 +1,29 @@
 /* -*-mode:c++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 
-#include <unistd.h>
-#include <cstring>
-#include <iostream>
 #include <chrono>
+#include <cstring>
 #include <google/protobuf/text_format.h>
+#include <iostream>
+#include <unistd.h>
 
+#include "thunk/thunk.hh"
 #include "thunk/thunk_reader.hh"
 #include "thunk/thunk_writer.hh"
-#include "thunk/thunk.hh"
 #include "util/exception.hh"
 #include "util/temp_file.hh"
 
 using namespace std;
-using namespace std::chrono;
+using namespace chrono;
 using namespace google::protobuf;
-using namespace gg::thunk;
+using namespace gg;
+using namespace thunk;
 
-void usage( const char * argv0 )
+void usage( const char* argv0 )
 {
   cerr << argv0 << endl;
 }
 
-int main( int argc, char * argv[] )
+int main( int argc, char* argv[] )
 {
   try {
     if ( argc <= 0 ) {
@@ -30,25 +31,30 @@ int main( int argc, char * argv[] )
     }
 
     if ( argc != 1 ) {
-      usage( argv[ 0 ] );
+      usage( argv[0] );
       return EXIT_FAILURE;
     }
 
     Thunk original_thunk {
       {
-        "FUNCTIONHASH", { "f", "arg1", "arg2", "arg3", "arg4", "arg5", "arg6" },
+        "FUNCTIONHASH",
+        { "f", "arg1", "arg2", "arg3", "arg4", "arg5", "arg6" },
         { "envar1=A", "envar2=B", "envar3=C" },
       },
       {
-        { "VOBJ1", "A" }, { "VOBJ2", "B" }, { "VOBJ3", "" },
-        { "TOBJ1", "A" }, { "TOBJ2", "B" }, { "TOBJ3", "" },
+        { "VOBJ1", "A" },
+        { "VOBJ2", "B" },
+        { "VOBJ3", "" },
+        { "TOBJ1", "A" },
+        { "TOBJ2", "B" },
+        { "TOBJ3", "" },
       },
       {
-        { "VOBJ4", "A" }, { "VOBJ5", "" }, { "VOBJ6", "" },
+        { "VOBJ4", "A" },
+        { "VOBJ5", "" },
+        { "VOBJ6", "" },
       },
-      {
-        "output1", "output2", "output3", "output4"
-      }
+      { "output1", "output2", "output3", "output4" }
     };
 
     original_thunk.set_timeout( 537ms );
@@ -62,14 +68,12 @@ int main( int argc, char * argv[] )
 
     if ( thunk == original_thunk ) {
       return EXIT_SUCCESS;
-    }
-    else {
+    } else {
       return EXIT_FAILURE;
     }
 
-  }
-  catch ( const exception &  e ) {
-    print_exception( argv[ 0 ], e );
+  } catch ( const exception& e ) {
+    print_exception( argv[0], e );
     return EXIT_FAILURE;
   }
 

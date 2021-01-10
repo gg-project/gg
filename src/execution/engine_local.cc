@@ -12,18 +12,20 @@ using namespace std;
 using namespace gg;
 using namespace gg::thunk;
 
-void LocalExecutionEngine::force_thunk( const Thunk & thunk,
-                                        ExecutionLoop & exec_loop )
+void LocalExecutionEngine::force_thunk( const Thunk& thunk,
+                                        ExecutionLoop& exec_loop )
 {
-  exec_loop.add_child_process( thunk.hash(),
-    [this, outputs=thunk.outputs()] ( const uint64_t, const string & hash, const int )
-    {
+  exec_loop.add_child_process(
+    thunk.hash(),
+    [this, outputs = thunk.outputs()](
+      const uint64_t, const string& hash, const int ) {
       running_jobs_--; /* XXX not thread-safe */
 
       vector<ThunkOutput> thunk_outputs;
 
-      for ( const auto & tag : outputs ) {
-        Optional<cache::ReductionResult> result = cache::check( gg::hash::for_output( hash, tag ) );
+      for ( const auto& tag : outputs ) {
+        Optional<cache::ReductionResult> result
+          = cache::check( gg::hash::for_output( hash, tag ) );
 
         if ( not result.initialized() ) {
           throw runtime_error( "could not find the reduction entry" );
@@ -34,22 +36,20 @@ void LocalExecutionEngine::force_thunk( const Thunk & thunk,
 
       success_callback_( hash, move( thunk_outputs ), 0 );
     },
-    [mixed=this->mixed_, &thunk]()
-    {
+    [mixed = this->mixed_, &thunk]() {
       vector<string> command;
 
       if ( mixed ) {
-          command = { "gg-execute", "--get-dependencies", "--put-output",
-                      thunk.hash() };
-      }
-      else {
-          command = { "gg-execute", thunk.hash() };
+        command = {
+          "gg-execute", "--get-dependencies", "--put-output", thunk.hash()
+        };
+      } else {
+        command = { "gg-execute", thunk.hash() };
       }
 
-      return ezexec( command[ 0 ], command, {}, true, true );
+      return ezexec( command[0], command, {}, true, true );
     },
-    true
-  );
+    true );
 
   running_jobs_++;
 }

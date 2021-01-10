@@ -2,8 +2,8 @@
 
 #include "thunk_writer.hh"
 
-#include <iostream>
 #include <fstream>
+#include <iostream>
 
 #include "thunk/ggutils.hh"
 #include "util/digest.hh"
@@ -12,13 +12,13 @@
 
 using namespace std;
 using namespace gg;
-using namespace gg::thunk;
+using namespace thunk;
 
-string ThunkWriter::write( const Thunk & thunk, const roost::path & path )
+string ThunkWriter::write( const Thunk& thunk, const roost::path& path )
 {
   const string serialized_thunk = serialize( thunk );
-  const string thunk_hash = gg::hash::compute( serialized_thunk,
-                                               ObjectType::Thunk );
+  const string thunk_hash
+    = gg::hash::compute( serialized_thunk, ObjectType::Thunk );
   thunk.set_hash( thunk_hash );
 
   roost::path target_path { ( not path.empty() ) ? path
@@ -31,7 +31,7 @@ string ThunkWriter::write( const Thunk & thunk, const roost::path & path )
   return thunk_hash;
 }
 
-string ThunkWriter::serialize( const gg::thunk::Thunk & thunk )
+string ThunkWriter::serialize( const gg::thunk::Thunk& thunk )
 {
   string ret { MAGIC_NUMBER };
   if ( not thunk.to_protobuf().AppendToString( &ret ) ) {

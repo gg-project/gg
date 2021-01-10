@@ -1,21 +1,22 @@
 /* -*-mode:c++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
 
-#ifndef MIME_TYPE_HH
-#define MIME_TYPE_HH
+#pragma once
 
-#include <vector>
 #include <string>
+#include <vector>
+
+namespace gg {
 
 class MIMEType
 {
 private:
   std::string type_;
-  std::vector< std::pair< std::string, std::string > > parameters_;
+  std::vector<std::pair<std::string, std::string>> parameters_;
 
 public:
-  MIMEType( const std::string & content_type );
+  MIMEType( const std::string& content_type );
 
-  const std::string & type() const { return type_; }
+  const std::string& type() const { return type_; }
 };
 
-#endif /* MIME_TYPE_HH */
+} // namespace gg

@@ -7,13 +7,17 @@
 #include "thunk/thunk.hh"
 #include "util/path.hh"
 
+namespace gg {
+
 class ThunkWriter
 {
 private:
   ThunkWriter();
 
 public:
-  static std::string write( const gg::thunk::Thunk & thunk,
-                            const roost::path & path = {} );
-  static std::string serialize( const gg::thunk::Thunk & thunk );
+  static std::string write( const gg::thunk::Thunk& thunk,
+                            const roost::path& path = {} );
+  static std::string serialize( const gg::thunk::Thunk& thunk );
 };
+
+} // namespace gg

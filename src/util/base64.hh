@@ -1,14 +1,15 @@
 /* -*-mode:c++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 
-#ifndef BASE64_HH
-#define BASE64_HH
+#pragma once
 
 #include <string>
 
-namespace base64
-{
-  std::string encode( const std::string & input );
-  std::string decode( const std::string & input );
-}
+namespace gg {
+namespace base64 {
 
-#endif /* BASE64_HH */
+std::string encode( const std::string& input );
+std::string decode( const std::string& input );
+
+} // namespace base64
+} // namespace gg
+

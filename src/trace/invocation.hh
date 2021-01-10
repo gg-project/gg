@@ -1,13 +1,14 @@
 /* -*-mode:c++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 
-#ifndef INVOCATION_HH
-#define INVOCATION_HH
+#pragma once
 
 #include <string>
 #include <vector>
 
 #include "syscall.hh"
 #include "util/optional.hh"
+
+namespace gg {
 
 struct ArgumentValue
 {
@@ -61,7 +62,7 @@ private:
   T get_syscall_arg( const uint8_t argnum ) const;
 
   template<typename T>
-  void set_syscall_arg( const uint8_t argnum, const T & value ) const;
+  void set_syscall_arg( const uint8_t argnum, const T& value ) const;
 
 public:
   SystemCallInvocation( const pid_t pid, const long syscall_no );
@@ -69,12 +70,18 @@ public:
   long syscall_no() const { return syscall_; }
   std::string name();
   Optional<SystemCallSignature> signature() const { return signature_; }
-  const Optional<std::vector<Argument>> & arguments() const { return arguments_; }
+  const Optional<std::vector<Argument>>& arguments() const
+  {
+    return arguments_;
+  }
   Optional<long> retval() const { return return_value_; }
 
   void fetch_arguments();
 
-  void set_retval( const long return_value ) { return_value_.reset( return_value ); }
+  void set_retval( const long return_value )
+  {
+    return_value_.reset( return_value );
+  }
 
   template<typename T>
   void set_argument( uint8_t argnum, const T value );
@@ -82,4 +89,4 @@ public:
   std::string to_string() const;
 };
 
-#endif /* INVOCATION_HH */
+} // namespace gg

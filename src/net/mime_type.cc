@@ -5,9 +5,11 @@
 #include "util/tokenize.hh"
 
 using namespace std;
+using namespace gg;
 
-MIMEType::MIMEType( const string & content_type )
-  : type_(), parameters_()
+MIMEType::MIMEType( const string& content_type )
+  : type_()
+  , parameters_()
 {
   auto type_and_parameters = split( content_type, ";" );
   if ( type_and_parameters.size() == 0

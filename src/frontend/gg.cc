@@ -7,13 +7,14 @@
 #include "util/system_runner.hh"
 
 using namespace std;
+using namespace gg;
 
-void usage( const char * argv0 )
+void usage( const char* argv0 )
 {
   cerr << argv0 << " COMMAND [ARG]..." << endl;
 }
 
-int main( int argc, char * argv[] )
+int main( int argc, char* argv[] )
 {
   try {
     if ( argc <= 0 ) {
@@ -21,24 +22,23 @@ int main( int argc, char * argv[] )
     }
 
     if ( argc < 2 ) {
-      usage( argv[ 0 ] );
+      usage( argv[0] );
       return EXIT_FAILURE;
     }
 
-    const string command = string( "gg-" ) + argv[ 1 ];
+    const string command = string( "gg-" ) + argv[1];
     vector<string> args { command };
 
     for ( int i = 2; i < argc; i++ ) {
-        args.emplace_back( argv[ i ] );
+      args.emplace_back( argv[i] );
     }
 
     ezexec( command, args, {}, true, true );
 
-    cerr << "gg: '" << argv[ 1 ] << "' is not a gg command." << endl;
+    cerr << "gg: '" << argv[1] << "' is not a gg command." << endl;
     return EXIT_FAILURE;
-  }
-  catch ( const exception &  e ) {
-    print_exception( argv[ 0 ], e );
+  } catch ( const exception& e ) {
+    print_exception( argv[0], e );
     return EXIT_FAILURE;
   }
 

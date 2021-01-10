@@ -3,13 +3,14 @@
 #include "status_bar.hh"
 
 #include <cstdio>
-#include <sys/ioctl.h>
-#include <unistd.h>
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <sys/ioctl.h>
+#include <unistd.h>
 
 using namespace std;
+using namespace gg;
 
 #define HIDE_CURSOR "\033[25l"
 #define SHOW_CURSOR "\033[25h"
@@ -24,7 +25,7 @@ StatusBar::~StatusBar()
   remove();
 }
 
-StatusBar & StatusBar::get()
+StatusBar& StatusBar::get()
 {
   static StatusBar status_bar;
   return status_bar;
@@ -54,17 +55,14 @@ void StatusBar::redraw()
   get().set_text( get().text_ );
 }
 
-void StatusBar::set_text( const string & text )
+void StatusBar::set_text( const string& text )
 {
-  StatusBar & status_bar = get();
+  StatusBar& status_bar = get();
   status_bar.text_ = text;
 
   ostringstream oss;
-  oss << HIDE_CURSOR
-      << "\0337\033[" << status_bar.window_size_.ws_row << ";1H\033[K"
-      << status_bar.text_
-      << "\033[K\0338"
-      << SHOW_CURSOR;
+  oss << HIDE_CURSOR << "\0337\033[" << status_bar.window_size_.ws_row
+      << ";1H\033[K" << status_bar.text_ << "\033[K\0338" << SHOW_CURSOR;
 
   cerr << oss.str() << flush;
 }

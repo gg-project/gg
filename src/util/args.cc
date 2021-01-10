@@ -3,18 +3,19 @@
 #include "args.hh"
 
 #include <iostream>
-#include <stdexcept>
 #include <memory>
+#include <stdexcept>
 #include <wordexp.h>
 
 #include "path.hh"
 
 using namespace std;
+using namespace gg;
 
-bool ExpandedArgs::needs_expansion( const int argc, char * const * argv )
+bool ExpandedArgs::needs_expansion( const int argc, char* const* argv )
 {
   for ( int i = 1; i < argc; i++ ) {
-    if ( argv[ i ][ 0 ] == '@' ) {
+    if ( argv[i][0] == '@' ) {
       return true;
     }
   }
@@ -22,32 +23,32 @@ bool ExpandedArgs::needs_expansion( const int argc, char * const * argv )
   return false;
 }
 
-vector<char> to_vector( const char * arg )
+vector<char> to_vector( const char* arg )
 {
   vector<char> output;
-  for ( const char * letter = arg; *letter; letter++ ) {
+  for ( const char* letter = arg; *letter; letter++ ) {
     output.push_back( *letter );
   }
   output.push_back( '\0' );
   return output;
 }
 
-ExpandedArgs ExpandedArgs::expand( const int argc, char * const * argv )
+ExpandedArgs ExpandedArgs::expand( const int argc, char* const* argv )
 {
   ExpandedArgs output;
 
   /* first put all the args in a vector */
-  char * const * in = argv;
+  char* const* in = argv;
   while ( in < argv + argc ) {
     output.arg_data.push_back( to_vector( *in++ ) );
-    output.args.push_back( &output.arg_data.back()[ 0 ] );
+    output.args.push_back( &output.arg_data.back()[0] );
   }
 
   /* now let's expand */
   for ( size_t i = 0; i < output.args.size(); i++ ) {
-    if ( output.args[ i ][ 0 ] == '@' ) {
+    if ( output.args[i][0] == '@' ) {
       /* this needs to be expanded */
-      roost::path file_path { output.args[ i ] + 1 };
+      roost::path file_path { output.args[i] + 1 };
 
       if ( not roost::exists( file_path ) ) {
         /* leave it be */
@@ -59,13 +60,14 @@ ExpandedArgs ExpandedArgs::expand( const int argc, char * const * argv )
 
       int triml;
       for ( triml = content.size() - 1; triml >= 0; triml-- ) {
-        if ( content[ triml ] != ' ' and content[ triml ] != '\n' and content[ triml ] != '\r' ) {
+        if ( content[triml] != ' ' and content[triml] != '\n'
+             and content[triml] != '\r' ) {
           break;
         }
       }
       content.erase( triml + 1 );
 
-      //unique_ptr<wordexp_t, decltype( wordfree ) *> p_ptr { &p, wordfree };
+      // unique_ptr<wordexp_t, decltype( wordfree ) *> p_ptr { &p, wordfree };
 
       int x = 0;
       if ( ( x = wordexp( content.c_str(), &p, WRDE_NOCMD ) ) ) {
@@ -73,24 +75,24 @@ ExpandedArgs ExpandedArgs::expand( const int argc, char * const * argv )
         throw runtime_error( "error while expanding argument" );
       }
 
-      vector<char *> expanded_args;
+      vector<char*> expanded_args;
       for ( size_t i = 0; i < p.we_wordc; i++ ) {
         vector<char> new_str;
-        for ( const char * letter = p.we_wordv[ i ]; *letter; letter++ ) {
+        for ( const char* letter = p.we_wordv[i]; *letter; letter++ ) {
           new_str.push_back( *letter );
         }
         new_str.push_back( '\0' );
         output.arg_data.push_back( new_str );
-        expanded_args.push_back( &output.arg_data.back()[ 0 ] );
+        expanded_args.push_back( &output.arg_data.back()[0] );
       }
       wordfree( &p );
 
       if ( expanded_args.size() ) {
-        output.args[ i ] = expanded_args.back();
+        output.args[i] = expanded_args.back();
         output.args.insert( output.args.begin() + i,
-                            expanded_args.begin(), expanded_args.end() - 1 );
-      }
-      else {
+                            expanded_args.begin(),
+                            expanded_args.end() - 1 );
+      } else {
         output.args.erase( output.args.begin() + i );
       }
 

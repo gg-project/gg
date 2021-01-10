@@ -93,8 +93,7 @@ print_hh = lambda *args, **kwargs: print(*args, file=hh_file, **kwargs)
 print_cc = lambda *args, **kwargs: print(*args, file=cc_file, **kwargs)
 
 print_hh("""\
-#ifndef TOOLCHAIN_HH
-#define TOOLCHAIN_HH
+#pragma once
 """)
 
 print_hh("""\
@@ -106,6 +105,8 @@ print_hh("""\
 #include "thunk/thunk.hh"
 #include "thunk/factory.hh"
 #include "util/path.hh"
+
+namespace gg {
 """)
 
 print_hh('#define TOOLCHAIN_PATH "{}"'.format(BINDIR))
@@ -135,7 +136,7 @@ extern const roost::path toolchain_path;
 
 extern const std::unordered_map<std::string, ThunkFactory::Data> program_data;
 
-#endif /* TOOLCHAIN_HH */""")
+} // namespace gg""")
 
 hh_file.close()
 
@@ -154,6 +155,11 @@ print_cc("""\
     } \\
   }""")
 print_cc()
+
+print_cc("""
+namespace gg {
+""")
+
 print_cc("""\
 const string & program_hash( const string & name )
 {
@@ -213,5 +219,9 @@ for path in gcc_envars.get('LIBRARY_PATH', []):
 print_cc("};\n")
 
 print_cc('const string gcc_install_path = "{}";\n'.format(gcc_envars.get('INSTALL_PATH',[''])[0]))
+
+print_cc ("""
+} //namespace gg
+""")
 
 cc_file.close()

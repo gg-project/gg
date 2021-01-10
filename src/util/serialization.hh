@@ -1,7 +1,6 @@
 /* -*-mode:c++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 
-#ifndef SERIALIZATION_HH
-#define SERIALIZATION_HH
+#pragma once
 
 #include <string>
 
@@ -10,6 +9,8 @@
 
 #include "file_descriptor.hh"
 
+namespace gg {
+
 class ProtobufDeserializer
 {
 protected:
@@ -17,16 +18,16 @@ protected:
   google::protobuf::io::FileInputStream raw_input_ { fin_.fd_num() };
 
 public:
-  ProtobufDeserializer( const std::string & filename );
-  ProtobufDeserializer( FileDescriptor && fd );
+  ProtobufDeserializer( const std::string& filename );
+  ProtobufDeserializer( FileDescriptor&& fd );
   std::string read_string( const size_t size );
 
   template<class EntryProtobufType>
-  bool read_protobuf( EntryProtobufType & protobuf );
+  bool read_protobuf( EntryProtobufType& protobuf );
 };
 
 template<class EntryProtobufType>
-bool ProtobufDeserializer::read_protobuf( EntryProtobufType & message )
+bool ProtobufDeserializer::read_protobuf( EntryProtobufType& message )
 {
   google::protobuf::io::CodedInputStream coded_input { &raw_input_ };
 
@@ -37,5 +38,4 @@ bool ProtobufDeserializer::read_protobuf( EntryProtobufType & message )
   return false;
 }
 
-
-#endif /* SERIALIZATION_HH */
+} // namespace gg

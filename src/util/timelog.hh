@@ -1,12 +1,13 @@
 /* -*-mode:c++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 
-#ifndef UTIL_TIMELOG_HH
-#define UTIL_TIMELOG_HH
+#pragma once
 
-#include <vector>
 #include <chrono>
-#include <string>
 #include <ctime>
+#include <string>
+#include <vector>
+
+namespace gg {
 
 class TimeLog
 {
@@ -17,9 +18,9 @@ private:
 
 public:
   TimeLog();
-  void add_point( const std::string & title );
+  void add_point( const std::string& title );
 
   std::string str() const;
 };
 
-#endif /* UTIL_TIMELOG_HH */
+} // namespace gg

@@ -2,35 +2,37 @@
 
 #include "gcc.hh"
 
-#include <iostream>
 #include <algorithm>
-#include <vector>
-#include <string>
-#include <fstream>
 #include <boost/tokenizer.hpp>
+#include <fstream>
+#include <iostream>
+#include <string>
 #include <sys/fcntl.h>
 #include <unistd.h>
+#include <vector>
 
 #include "thunk/ggutils.hh"
-#include "thunk/thunk_writer.hh"
-#include "thunk/thunk_reader.hh"
 #include "thunk/thunk.hh"
+#include "thunk/thunk_reader.hh"
+#include "thunk/thunk_writer.hh"
 #include "util/exception.hh"
 #include "util/system_runner.hh"
 #include "util/temp_file.hh"
 
 using namespace std;
 using namespace boost;
-using namespace gg::thunk;
+using namespace gg;
+using namespace thunk;
 
-vector<string> write_dependencies_file( const string & output_name,
-                                        const string & target_name,
-                                        const Thunk::DataList & data_items )
+vector<string> write_dependencies_file( const string& output_name,
+                                        const string& target_name,
+                                        const Thunk::DataList& data_items )
 {
-  /* always write a canonical dependencies file to make sure it matches our parse */
+  /* always write a canonical dependencies file to make sure it matches our
+   * parse */
   string output { target_name + ":" };
   vector<string> filenames;
-  for ( const auto & item : data_items ) {
+  for ( const auto& item : data_items ) {
     filenames.emplace_back( item.second );
     output.append( " " );
     output.append( item.second );
@@ -41,9 +43,9 @@ vector<string> write_dependencies_file( const string & output_name,
   return filenames;
 }
 
-
-vector<string> GCCModelGenerator::parse_dependencies_file( const string & dep_filename,
-                                                           const string & target_name )
+vector<string> GCCModelGenerator::parse_dependencies_file(
+  const string& dep_filename,
+  const string& target_name )
 {
   vector<string> dependencies;
 
@@ -55,17 +57,18 @@ vector<string> GCCModelGenerator::parse_dependencies_file( const string & dep_fi
 
   while ( getline( depin, line ) ) {
     if ( line.length() < 2 ) {
-      if ( found_target ) { break; }
-      else { continue; }
+      if ( found_target ) {
+        break;
+      } else {
+        continue;
+      }
     }
 
-    if ( not found_target and
-         line.compare( 0, target_str.size(), target_str ) == 0 ) {
+    if ( not found_target
+         and line.compare( 0, target_str.size(), target_str ) == 0 ) {
       line = line.substr( line.find( ':' ) + 1, line.length() );
       found_target = true;
-    }
-    else if ( found_target and
-              line.find( ":" ) != string::npos ) {
+    } else if ( found_target and line.find( ":" ) != string::npos ) {
       break;
     }
 
@@ -75,7 +78,7 @@ vector<string> GCCModelGenerator::parse_dependencies_file( const string & dep_fi
 
     line = line.substr( 1, line.length() );
 
-    if ( line[ line.length() - 1 ] == '\\' ) {
+    if ( line[line.length() - 1] == '\\' ) {
       line = line.substr( 0, line.length() - 2 );
     }
 
@@ -93,15 +96,15 @@ vector<string> GCCModelGenerator::parse_dependencies_file( const string & dep_fi
   return dependencies;
 }
 
-vector<string>
-GCCModelGenerator::generate_dependencies_file( const OperationMode op_mode,
-                                               const string & input_filename,
-                                               const vector<string> & option_args,
-                                               const string & output_name,
-                                               const string & target_name,
-                                               const bool use_cache,
-                                               const string & gcc_binary,
-                                               const Optional<vector<string>> & custom_environ )
+vector<string> GCCModelGenerator::generate_dependencies_file(
+  const OperationMode op_mode,
+  const string& input_filename,
+  const vector<string>& option_args,
+  const string& output_name,
+  const string& target_name,
+  const bool use_cache,
+  const string& gcc_binary,
+  const Optional<vector<string>>& custom_environ )
 {
   vector<string> args;
   args.reserve( 1 + option_args.size() );
@@ -109,12 +112,10 @@ GCCModelGenerator::generate_dependencies_file( const OperationMode op_mode,
   if ( gcc_binary.length() == 0 ) {
     if ( op_mode == OperationMode::GCC ) {
       args.push_back( "gcc-7" );
-    }
-    else {
+    } else {
       args.push_back( "g++-7" );
     }
-  }
-  else {
+  } else {
     args.push_back( gcc_binary );
   }
 
@@ -122,14 +123,16 @@ GCCModelGenerator::generate_dependencies_file( const OperationMode op_mode,
 
   string output_filename;
 
-  const bool has_dependencies_option = find_if(
-    args.begin(), args.end(),
-    []( const string & opt )
-    {
-      return ( opt == "-M" ) or ( opt == "-MF" ) or ( opt == "-MM" ) or
-             ( opt == "-MG" ) or ( opt == "-MP" ) or ( opt == "-MQ" ) or
-             ( opt == "-MD" ) or ( opt == "-MMD" );
-    } ) != end( args );
+  const bool has_dependencies_option
+    = find_if( args.begin(),
+               args.end(),
+               []( const string& opt ) {
+                 return ( opt == "-M" ) or ( opt == "-MF" ) or ( opt == "-MM" )
+                        or ( opt == "-MG" ) or ( opt == "-MP" )
+                        or ( opt == "-MQ" ) or ( opt == "-MD" )
+                        or ( opt == "-MMD" );
+               } )
+      != end( args );
 
   if ( has_dependencies_option ) {
     auto m_search = find( args.begin(), args.end(), "-M" );
@@ -137,7 +140,8 @@ GCCModelGenerator::generate_dependencies_file( const OperationMode op_mode,
     auto md_search = find( args.begin(), args.end(), "-MD" );
 
     if ( mf_search == end( args ) ) {
-      throw runtime_error( "cannot produce dependencies file without -MF option" );
+      throw runtime_error(
+        "cannot produce dependencies file without -MF option" );
     }
 
     if ( md_search != end( args ) ) {
@@ -147,8 +151,7 @@ GCCModelGenerator::generate_dependencies_file( const OperationMode op_mode,
         args.push_back( "-M" );
       }
     }
-  }
-  else {
+  } else {
     args.push_back( "-M" );
     args.push_back( "-MT" );
     args.push_back( target_name );
@@ -171,7 +174,7 @@ GCCModelGenerator::generate_dependencies_file( const OperationMode op_mode,
         bool cache_hit = true;
 
         /* check if all the infiles are still the same */
-        for ( const auto & item : dep_cache_entry.values() ) {
+        for ( const auto& item : dep_cache_entry.values() ) {
           if ( not Thunk::matches_filesystem( item ) ) {
             cache_hit = false;
             break;
@@ -179,7 +182,8 @@ GCCModelGenerator::generate_dependencies_file( const OperationMode op_mode,
         }
 
         if ( cache_hit ) {
-          return write_dependencies_file( output_name, target_name, dep_cache_entry.values() );
+          return write_dependencies_file(
+            output_name, target_name, dep_cache_entry.values() );
         }
       }
     }
@@ -190,9 +194,11 @@ GCCModelGenerator::generate_dependencies_file( const OperationMode op_mode,
     args.push_back( output_name );
   }
 
-  run( args[ 0 ], args,
+  run( args[0],
+       args,
        custom_environ.initialized() ? *custom_environ : vector<string> {},
-       not custom_environ.initialized(), true );
+       not custom_environ.initialized(),
+       true );
 
   if ( not has_dependencies_option ) {
     args.pop_back();
@@ -202,13 +208,15 @@ GCCModelGenerator::generate_dependencies_file( const OperationMode op_mode,
   /* write a cache entry for next time */
 
   /* assemble the infiles */
-  const vector<string> infiles_list = parse_dependencies_file( output_name, target_name );
+  const vector<string> infiles_list
+    = parse_dependencies_file( output_name, target_name );
   vector<Thunk::DataItem> dependencies;
-  for ( const auto & str : infiles_list ) {
+  for ( const auto& str : infiles_list ) {
     dependencies.emplace_back( make_pair( gg::hash::file( str ), str ) );
   }
 
-  Thunk dep_cache_entry( makedep_fn, dependencies,
+  Thunk dep_cache_entry( makedep_fn,
+                         dependencies,
                          { make_pair( makedep_fn.hash(), "" ) },
                          { "fake_output" } );
 
@@ -218,5 +226,6 @@ GCCModelGenerator::generate_dependencies_file( const OperationMode op_mode,
     roost::atomic_create( serialized_cache_entry, cache_entry_path );
   }
 
-  return write_dependencies_file( output_name, target_name, dep_cache_entry.values() );
+  return write_dependencies_file(
+    output_name, target_name, dep_cache_entry.values() );
 }

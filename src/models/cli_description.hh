@@ -1,11 +1,10 @@
 /* -*-mode:c++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 
-#ifndef CLI_DESCRIPTION_HH
-#define CLI_DESCRIPTION_HH
+#pragma once
 
+#include <limits>
 #include <string>
 #include <vector>
-#include <limits>
 
 #include "util/optional.hh"
 
@@ -15,6 +14,8 @@
    path-to-static-bins/vpxenc -i,--input=@infile @outfile
 */
 
+namespace gg {
+
 struct CLIOption
 {
   int value { 0 };
@@ -22,7 +23,12 @@ struct CLIOption
   Optional<char> short_opt {};
   Optional<std::string> long_opt {};
 
-  enum class Type { DoNotCare, InFile, OutFile } type { Type::DoNotCare };
+  enum class Type
+  {
+    DoNotCare,
+    InFile,
+    OutFile
+  } type { Type::DoNotCare };
 };
 
 class CLIDescription
@@ -34,12 +40,12 @@ private:
   std::vector<size_t> outfile_args_ {};
 
 public:
-  CLIDescription( const std::string & description );
+  CLIDescription( const std::string& description );
 
-  const std::string & target_bin() const { return target_bin_; }
-  const std::vector<CLIOption> & options() const { return options_; }
-  const std::vector<size_t> & infile_args() const { return infile_args_; }
-  const std::vector<size_t> & outfile_args() const { return outfile_args_; }
+  const std::string& target_bin() const { return target_bin_; }
+  const std::vector<CLIOption>& options() const { return options_; }
+  const std::vector<size_t>& infile_args() const { return infile_args_; }
+  const std::vector<size_t>& outfile_args() const { return outfile_args_; }
 };
 
-#endif /* CLI_DESCRIPTION_HH */
+} // namespace gg

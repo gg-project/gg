@@ -1,12 +1,13 @@
 /* -*-mode:c++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 
-#ifndef UTIL_URI_HH
-#define UTIL_URI_HH
+#pragma once
 
 #include <string>
 #include <unordered_map>
 
 #include "optional.hh"
+
+namespace gg {
 
 struct ParsedURI
 {
@@ -18,7 +19,7 @@ struct ParsedURI
   std::string path {};
   std::unordered_map<std::string, std::string> options {};
 
-  ParsedURI( const std::string & uri );
+  ParsedURI( const std::string& uri );
 };
 
-#endif /* UTIL_URI_HH */
+} // namespace gg

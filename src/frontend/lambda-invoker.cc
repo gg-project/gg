@@ -10,6 +10,7 @@
 #include "net/socket.hh"
 
 using namespace std;
+using namespace gg;
 
 int main()
 {
@@ -36,7 +37,7 @@ int main()
   responses.parse( lambda.read() );
 
   if ( not responses.empty() ) {
-      cout << responses.front().str() << endl;
+    cout << responses.front().str() << endl;
   }
 
   return 0;

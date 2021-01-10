@@ -2,19 +2,20 @@
 
 #include "message.hh"
 
+#include <endian.h>
 #include <iostream>
 #include <stdexcept>
-#include <endian.h>
 
 #include "util/util.hh"
 
 using namespace std;
+using namespace gg;
 using namespace meow;
 
 string put_field( const uint32_t n )
 {
   const uint32_t network_order = htobe32( n );
-  return string( reinterpret_cast<const char *>( &network_order ),
+  return string( reinterpret_cast<const char*>( &network_order ),
                  sizeof( network_order ) );
 }
 
@@ -22,7 +23,7 @@ string put_field( const uint32_t n )
 template<class T>
 string put_field( T n ) = delete;
 
-Message::Message( const Chunk & chunk )
+Message::Message( const Chunk& chunk )
 {
   if ( chunk.size() < 5 ) {
     throw out_of_range( "incomplete header" );
@@ -32,9 +33,10 @@ Message::Message( const Chunk & chunk )
   payload_ = chunk( 5 ).to_string();
 }
 
-Message::Message( const OpCode opcode, string && payload )
-  : payload_length_( payload.length() ), opcode_( opcode ),
-    payload_( move( payload ) )
+Message::Message( const OpCode opcode, string&& payload )
+  : payload_length_( payload.length() )
+  , opcode_( opcode )
+  , payload_( move( payload ) )
 {}
 
 string Message::str() const
@@ -47,12 +49,12 @@ string Message::str() const
   return output;
 }
 
-uint32_t Message::expected_length( const Chunk & chunk )
+uint32_t Message::expected_length( const Chunk& chunk )
 {
   return 5 + ( ( chunk.size() < 5 ) ? 0 : chunk( 0, 4 ).be32() );
 }
 
-void MessageParser::parse( const string & buf )
+void MessageParser::parse( const string& buf )
 {
   raw_buffer_.append( buf );
 
@@ -64,7 +66,9 @@ void MessageParser::parse( const string & buf )
       break;
     }
 
-    Message message { Chunk { reinterpret_cast<const uint8_t *>( raw_buffer_.data() ), expected_length } };
+    Message message { Chunk {
+      reinterpret_cast<const uint8_t*>( raw_buffer_.data() ),
+      expected_length } };
     raw_buffer_.erase( 0, expected_length );
     completed_messages_.emplace( move( message ) );
   }

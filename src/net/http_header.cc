@@ -7,6 +7,7 @@
 #include "util/exception.hh"
 
 using namespace std;
+using namespace gg;
 
 /* parse a header line into a key and a value */
 HTTPHeader::HTTPHeader( const string & buf )

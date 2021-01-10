@@ -2,21 +2,22 @@
 
 #include "temp_dir.hh"
 
-#include <iostream>
-#include <cstdlib>
-#include <unistd.h>
 #include <cassert>
+#include <cstdlib>
+#include <iostream>
+#include <unistd.h>
 
-#include "temp_file.hh"
 #include "exception.hh"
+#include "temp_file.hh"
 
 using namespace std;
+using namespace gg;
 
-UniqueDirectory::UniqueDirectory( const string & dirname_template )
-  : mutable_temp_dirname_( to_mutable( dirname_template + ".XXXXXX" ) ),
-    owns_dir_( true )
+UniqueDirectory::UniqueDirectory( const string& dirname_template )
+  : mutable_temp_dirname_( to_mutable( dirname_template + ".XXXXXX" ) )
+  , owns_dir_( true )
 {
-  if ( mkdtemp( &mutable_temp_dirname_[ 0 ] ) == NULL ) {
+  if ( mkdtemp( &mutable_temp_dirname_[0] ) == NULL ) {
     throw unix_error( "mkdtemp " + name() );
   }
 }
@@ -26,21 +27,23 @@ TempDirectory::~TempDirectory()
 {
   try {
     remove();
-  } catch (unix_error & e) {
+  } catch ( unix_error& e ) {
     cerr << "Warning: " << e.what() << endl;
   }
 }
 
 void TempDirectory::remove()
 {
-  if ( not owns_dir_ ) { return; }
+  if ( not owns_dir_ ) {
+    return;
+  }
   owns_dir_ = false;
   CheckSystemCall( "rmdir " + name(), rmdir( name().c_str() ) );
 }
 
-UniqueDirectory::UniqueDirectory( UniqueDirectory && other )
-  : mutable_temp_dirname_( other.mutable_temp_dirname_ ),
-    owns_dir_( true )
+UniqueDirectory::UniqueDirectory( UniqueDirectory&& other )
+  : mutable_temp_dirname_( other.mutable_temp_dirname_ )
+  , owns_dir_( true )
 {
   other.owns_dir_ = false;
 }
@@ -48,5 +51,6 @@ UniqueDirectory::UniqueDirectory( UniqueDirectory && other )
 string UniqueDirectory::name( void ) const
 {
   assert( mutable_temp_dirname_.size() > 1 );
-  return string( mutable_temp_dirname_.begin(), mutable_temp_dirname_.end() - 1 );
+  return string( mutable_temp_dirname_.begin(),
+                 mutable_temp_dirname_.end() - 1 );
 }

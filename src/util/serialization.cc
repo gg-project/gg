@@ -8,13 +8,13 @@
 #include "exception.hh"
 
 using namespace std;
+using namespace gg;
 
-ProtobufDeserializer::ProtobufDeserializer( const string & filename )
-  : fin_( CheckSystemCall( filename,
-                           open( filename.c_str(), O_RDONLY, 0 ) ) )
+ProtobufDeserializer::ProtobufDeserializer( const string& filename )
+  : fin_( CheckSystemCall( filename, open( filename.c_str(), O_RDONLY, 0 ) ) )
 {}
 
-ProtobufDeserializer::ProtobufDeserializer( FileDescriptor && fd )
+ProtobufDeserializer::ProtobufDeserializer( FileDescriptor&& fd )
   : fin_( move( fd ) )
 {}
 

@@ -1,10 +1,11 @@
 /* -*-mode:c++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 
-#ifndef UTIL_ITERATOR_HH
-#define UTIL_ITERATOR_HH
+#pragma once
 
 #include <vector>
 #include <iterator>
+
+namespace gg {
 
 template<class Iterator>
 class JoinIterator
@@ -114,5 +115,4 @@ JoinContainer<typename Container::const_iterator> join_containers( const Contain
   return x;
 }
 
-
-#endif /* UTIL_ITERATOR_HH */
+}

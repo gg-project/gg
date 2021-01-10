@@ -1,14 +1,15 @@
 /* -*-mode:c++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 
-#ifndef CONNECTION_HH
-#define CONNECTION_HH
+#pragma once
 
-#include <string>
-#include <queue>
 #include <iostream>
+#include <queue>
+#include <string>
 
-#include "net/socket.hh"
 #include "net/nb_secure_socket.hh"
+#include "net/socket.hh"
+
+namespace gg {
 
 class ExecutionLoop;
 
@@ -24,24 +25,25 @@ private:
 public:
   Connection() {}
 
-  Connection( SocketType && sock )
+  Connection( SocketType&& sock )
     : socket_( std::move( sock ) )
   {}
 
-  Connection( const Connection & ) = delete;
+  Connection( const Connection& ) = delete;
 
   ~Connection()
   {
     if ( write_buffer_.size() ) {
-      /* std::cerr << "Connection destroyed with data left in write buffer" << std::endl; */
+      /* std::cerr << "Connection destroyed with data left in write buffer" <<
+       * std::endl; */
     }
   }
 
-  void enqueue_write( const std::string & str ) { write_buffer_.append( str ); }
-  const SocketType & socket() const { return socket_; }
+  void enqueue_write( const std::string& str ) { write_buffer_.append( str ); }
+  const SocketType& socket() const { return socket_; }
 };
 
 using TCPConnection = Connection<TCPSocket>;
 using SSLConnection = Connection<NBSecureSocket>;
 
-#endif /* CONNECTION_HH */
+} // namespace gg

@@ -1,8 +1,8 @@
 /* -*-mode:c++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 
+#include <cctype>
 #include <iostream>
 #include <string>
-#include <cctype>
 
 using namespace std;
 
@@ -26,13 +26,12 @@ int main()
     }
 
     for ( size_t i = 0; i < line.length(); i++ ) {
-      char c = line [ i ];
+      char c = line[i];
 
       if ( c == '#' ) {
         keep_next_line = ( line.back() == '\\' );
         cout << line << endl;
-      }
-      else if ( isspace( c ) ) {
+      } else if ( isspace( c ) ) {
         continue;
       }
 

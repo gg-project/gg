@@ -8,13 +8,14 @@
 #include "thunk/ggutils.cc"
 
 using namespace std;
+using namespace gg;
 
-void usage( char * argv0 )
+void usage( char* argv0 )
 {
   cerr << argv0 << " FILENAME..." << endl;
 }
 
-int main( int argc, char * argv[] )
+int main( int argc, char* argv[] )
 {
   try {
     if ( argc <= 0 ) {
@@ -28,7 +29,8 @@ int main( int argc, char * argv[] )
       read_names_from_stdin = true;
     }
 
-    unique_ptr<StorageBackend> storage_backend = StorageBackend::create_backend( gg::remote::storage_backend_uri() );
+    unique_ptr<StorageBackend> storage_backend
+      = StorageBackend::create_backend( gg::remote::storage_backend_uri() );
 
     vector<storage::PutRequest> put_requests;
     int arg_index = 1;
@@ -42,16 +44,13 @@ int main( int argc, char * argv[] )
       if ( read_names_from_stdin ) {
         if ( getline( cin, line ) ) {
           file_name = line;
-        }
-        else {
+        } else {
           last_batch = true;
         }
-      }
-      else {
+      } else {
         if ( arg_index < argc ) {
-          file_name = argv[ arg_index++ ];
-        }
-        else {
+          file_name = argv[arg_index++];
+        } else {
           last_batch = true;
         }
       }
@@ -59,24 +58,26 @@ int main( int argc, char * argv[] )
       if ( not last_batch ) {
         file_hash = gg::hash::file_force( file_name );
         if ( not storage_backend->is_available( file_hash ) ) {
-          put_requests.emplace_back( file_name, file_hash, gg::hash::to_hex( file_hash ) );
+          put_requests.emplace_back(
+            file_name, file_hash, gg::hash::to_hex( file_hash ) );
         }
       }
 
-      if ( put_requests.size() >= BATCH_SIZE or
-           ( put_requests.size() > 0 and last_batch ) ) {
-        storage_backend->put( put_requests,
-          [&storage_backend]( const storage::PutRequest & request ) {
+      if ( put_requests.size() >= BATCH_SIZE
+           or ( put_requests.size() > 0 and last_batch ) ) {
+        storage_backend->put(
+          put_requests,
+          [&storage_backend]( const storage::PutRequest& request ) {
             storage_backend->set_available( request.object_key );
-            cerr << "PUT " << request.filename.string() << " -> " << request.object_key << endl;
+            cerr << "PUT " << request.filename.string() << " -> "
+                 << request.object_key << endl;
           } );
 
         put_requests.clear();
       }
     }
-  }
-  catch ( const exception &  e ) {
-    print_exception( argv[ 0 ], e );
+  } catch ( const exception& e ) {
+    print_exception( argv[0], e );
     return EXIT_FAILURE;
   }
 

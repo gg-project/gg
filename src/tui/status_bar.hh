@@ -1,11 +1,12 @@
 /* -*-mode:c++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 
-#ifndef STATUS_BAR_HH
-#define STATUS_BAR_HH
+#pragma once
 
 #include <cstdio>
-#include <sys/ioctl.h>
 #include <string>
+#include <sys/ioctl.h>
+
+namespace gg {
 
 class StatusBar
 {
@@ -20,13 +21,13 @@ private:
 public:
   ~StatusBar();
 
-  StatusBar( const StatusBar & ) = delete;
-  void operator=( const StatusBar & ) = delete;
+  StatusBar( const StatusBar& ) = delete;
+  void operator=( const StatusBar& ) = delete;
 
-  static StatusBar & get();
+  static StatusBar& get();
 
   static void redraw();
-  static void set_text( const std::string & text );
+  static void set_text( const std::string& text );
 };
 
-#endif /* STATUS_BAR_HH */
+} // namespace gg

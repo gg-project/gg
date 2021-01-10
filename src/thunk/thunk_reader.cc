@@ -9,22 +9,23 @@
 
 using namespace std;
 using namespace gg;
-using namespace gg::thunk;
+using namespace thunk;
 
-bool ThunkReader::is_thunk( const roost::path & path )
+bool ThunkReader::is_thunk( const roost::path& path )
 {
-  FileDescriptor file { CheckSystemCall( "open (" + path.string() + ")",
-                                         open( path.string().c_str(), O_RDONLY ) ) };
+  FileDescriptor file { CheckSystemCall(
+    "open (" + path.string() + ")", open( path.string().c_str(), O_RDONLY ) ) };
   string magic = file.read_exactly( MAGIC_NUMBER.size(), true );
   return magic == MAGIC_NUMBER;
 }
 
-Thunk ThunkReader::read( const roost::path & path, const std::string & hash )
+Thunk ThunkReader::read( const roost::path& path, const std::string& hash )
 {
   ProtobufDeserializer deserializer { path.string() };
   protobuf::Thunk thunk_proto;
 
-  deserializer.read_string( MAGIC_NUMBER.length() ); /* skipping the magic number */
+  deserializer.read_string(
+    MAGIC_NUMBER.length() ); /* skipping the magic number */
   deserializer.read_protobuf( thunk_proto );
 
   Thunk thunk { thunk_proto };

@@ -5,7 +5,8 @@
 #include <sstream>
 
 using namespace std;
-using namespace std::chrono;
+using namespace chrono;
+using namespace gg;
 
 TimeLog::TimeLog()
   : start_( duration_cast<milliseconds>( system_clock::now().time_since_epoch() ) ),

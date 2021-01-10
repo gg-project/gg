@@ -6,7 +6,8 @@
 
 using namespace std;
 
-void test_lexically_normal( const string & pathname, const string & expected_path )
+void test_lexically_normal( const string& pathname,
+                            const string& expected_path )
 {
   string normalized_path = roost::path( pathname ).lexically_normal().string();
   if ( expected_path != normalized_path ) {
@@ -26,7 +27,8 @@ int main()
 
   test_lexically_normal( "./home/sadjad", "home/sadjad" );
 
-  test_lexically_normal( "///home////////sadja....d///////", "/home/sadja....d" );
+  test_lexically_normal( "///home////////sadja....d///////",
+                         "/home/sadja....d" );
 
   test_lexically_normal( "/../home/sadjad", "/home/sadjad" );
 
@@ -40,9 +42,8 @@ int main()
     "/home/sadjad/../../../././../../././../../../../home/.././etc/john/sadjad",
     "/etc/john/sadjad" );
 
-  test_lexically_normal(
-    "../../../home/../etc/../dev/../../proc/cpuinfo",
-    "../../../../proc/cpuinfo" );
+  test_lexically_normal( "../../../home/../etc/../dev/../../proc/cpuinfo",
+                         "../../../../proc/cpuinfo" );
 
   test_lexically_normal( "../../../../../..", "../../../../../.." );
 
@@ -54,9 +55,8 @@ int main()
 
   test_lexically_normal( "./home/sadjad//..", "home" );
 
-  test_lexically_normal(
-    "../../../home/../../../../../../../../../dev/video0",
-    "../../../../../../../../../../../dev/video0" );
+  test_lexically_normal( "../../../home/../../../../../../../../../dev/video0",
+                         "../../../../../../../../../../../dev/video0" );
 
   return 0;
 }

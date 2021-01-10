@@ -1,76 +1,81 @@
 /* -*-mode:c++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 
-#include <iostream>
 #include <algorithm>
+#include <iostream>
 
 #include "gcc.hh"
-#include "timeouts.hh"
+#include "thunk/ggutils.hh"
 #include "thunk/thunk.hh"
 #include "thunk/thunk_reader.hh"
 #include "thunk/thunk_writer.hh"
-#include "thunk/ggutils.hh"
+#include "timeouts.hh"
 #include "util/exception.hh"
 #include "util/system_runner.hh"
 #include "util/tokenize.hh"
 #include "util/util.hh"
 
 using namespace std;
-using namespace gg::thunk;
+using namespace gg;
+using namespace thunk;
 
-void usage( const char * argv0 )
+void usage( const char* argv0 )
 {
   cerr << argv0 << " PREPROCESSOR-THUNK" << endl;
 }
 
-vector<string> canonicalize_args( vector<string> & args )
+vector<string> canonicalize_args( vector<string>& args )
 {
   const int argc = args.size();
-  vector<char *> argv;
-  transform( args.begin(), args.end(), back_inserter( argv ),
-             []( string & s ) { return &s[ 0 ]; } );
+  vector<char*> argv;
+  transform( args.begin(), args.end(), back_inserter( argv ), []( string& s ) {
+    return &s[0];
+  } );
 
-  GCCArguments gcc_arguments { argc, &argv[ 0 ], false, true };
+  GCCArguments gcc_arguments { argc, &argv[0], false, true };
   vector<string> new_args = gcc_arguments.all();
 
   return new_args;
 }
 
-void prepare_include_path( const roost::path & sysroot,
-                           const vector<string> & tarballs )
+void prepare_include_path( const roost::path& sysroot,
+                           const vector<string>& tarballs )
 {
   roost::create_directories( sysroot );
 
   /* (1) extract the tarballs */
-  for ( const string & tarball_hash : tarballs ) {
-    vector<string> extract_args { "/bin/tar", "xf",
+  for ( const string& tarball_hash : tarballs ) {
+    vector<string> extract_args { "/bin/tar",
+                                  "xf",
                                   gg::paths::blob( tarball_hash ).string(),
-                                  "-C", sysroot.string(), "-I", "/bin/gzip" };
+                                  "-C",
+                                  sysroot.string(),
+                                  "-I",
+                                  "/bin/gzip" };
 
     cerr << "Extracting " << tarball_hash << "...";
-    run( extract_args[ 0 ], extract_args, {}, true, true );
+    run( extract_args[0], extract_args, {}, true, true );
     cerr << "done." << endl;
   }
 }
 
-string get_hash( const string & file )
+string get_hash( const string& file )
 {
   constexpr char PREFIX[] = "// GGHASH:";
   constexpr size_t PREFIX_LEN = sizeof( PREFIX ) - 1;
   constexpr size_t LEN = PREFIX_LEN + gg::hash::length;
-  char read_buffer[ LEN ];
+  char read_buffer[LEN];
 
   ifstream fin { file };
   fin.read( read_buffer, LEN );
 
   if ( strncmp( PREFIX, read_buffer, PREFIX_LEN ) == 0 ) {
     return { read_buffer + PREFIX_LEN, gg::hash::length };
-  }
-  else {
+  } else {
     return gg::hash::file_force( file );
   }
 }
 
-int main( int argc, char * argv[] )
+int main( int argc, char* argv[] )
 {
   try {
     if ( argc <= 0 ) {
@@ -78,7 +83,7 @@ int main( int argc, char * argv[] )
     }
 
     if ( argc < 2 ) {
-      usage( argv[ 0 ] );
+      usage( argv[0] );
       return EXIT_FAILURE;
     }
 
@@ -92,10 +97,10 @@ int main( int argc, char * argv[] )
     const roost::path execution_root { roost::current_working_directory() };
 
     /* read all the necessary environment variables *****************/
-    roost::path working_directory  = safe_getenv( DEPGEN_WORKING_DIRECTORY );
-    const string include_tarballs  = safe_getenv( DEPGEN_INCLUDE_TARBALLS );
-    const string input_name        = safe_getenv( DEPGEN_INPUT_NAME );
-    const string target_name       = safe_getenv( DEPGEN_TARGET_NAME );
+    roost::path working_directory = safe_getenv( DEPGEN_WORKING_DIRECTORY );
+    const string include_tarballs = safe_getenv( DEPGEN_INCLUDE_TARBALLS );
+    const string input_name = safe_getenv( DEPGEN_INPUT_NAME );
+    const string target_name = safe_getenv( DEPGEN_TARGET_NAME );
     const string gcc_function_hash = safe_getenv( DEPGEN_GCC_HASH );
     const string cc1_function_name = safe_getenv( DEPGEN_CC1_NAME );
     const string cc1_function_hash = safe_getenv( DEPGEN_CC1_HASH );
@@ -107,9 +112,10 @@ int main( int argc, char * argv[] )
     /* parse the arguments ******************************************/
     vector<string> thunk_args = thunk.function().args();
 
-    const OperationMode op_mode =
-      ( thunk_args[ 0 ] == program_data.at( GCC ).filename() )
-      ? OperationMode::GCC : OperationMode::GXX;
+    const OperationMode op_mode
+      = ( thunk_args[0] == program_data.at( GCC ).filename() )
+          ? OperationMode::GCC
+          : OperationMode::GXX;
 
     thunk_args.erase( thunk_args.begin() + 1 );
     thunk_args = canonicalize_args( thunk_args );
@@ -122,7 +128,8 @@ int main( int argc, char * argv[] )
     const roost::path gcc_dir = sysroot / "gccbin";
     roost::create_directories( gcc_dir );
     const string path_envar = "PATH=" + gcc_dir.string();
-    const roost::path gcc_path = gcc_dir / ( ( op_mode == OperationMode::GCC ) ? "gcc" : "g++" );
+    const roost::path gcc_path
+      = gcc_dir / ( ( op_mode == OperationMode::GCC ) ? "gcc" : "g++" );
     const roost::path cc1_path = gcc_dir / cc1_function_name;
     roost::symlink( gg::paths::blob( gcc_function_hash ), gcc_path );
     roost::symlink( gg::paths::blob( cc1_function_hash ), cc1_path );
@@ -134,9 +141,9 @@ int main( int argc, char * argv[] )
     roost::chdir( working_directory );
 
     /* put all the extra files in the sysroot ***********************/
-    for ( const auto & value : thunk.values() ) {
-      if ( value.second.length() == 0 or
-           value.second.compare( 0, sizeof( "/__gg" ) - 1, "/__gg" ) == 0 ) {
+    for ( const auto& value : thunk.values() ) {
+      if ( value.second.length() == 0
+           or value.second.compare( 0, sizeof( "/__gg" ) - 1, "/__gg" ) == 0 ) {
         continue;
       }
 
@@ -147,23 +154,30 @@ int main( int argc, char * argv[] )
 
       cerr << "Putting file " << value.second << "...";
       roost::create_directories( roost::dirname( filepath ) );
-      if ( roost::exists( filepath ) ) { roost::remove( filepath ); }
+      if ( roost::exists( filepath ) ) {
+        roost::remove( filepath );
+      }
       roost::symlink( gg::paths::blob( value.first ), filepath );
       cerr << "done." << endl;
     }
 
     /* time to run gcc -M *******************************************/
-    const vector<string> dependencies =
-      GCCModelGenerator::generate_dependencies_file(
-        op_mode, input_name, thunk_args,
-        ( execution_root / "dependencies" ).string(), target_name,
-        false, gcc_path.string(), vector<string> { { path_envar } } );
+    const vector<string> dependencies
+      = GCCModelGenerator::generate_dependencies_file(
+        op_mode,
+        input_name,
+        thunk_args,
+        ( execution_root / "dependencies" ).string(),
+        target_name,
+        false,
+        gcc_path.string(),
+        vector<string> { { path_envar } } );
 
     /* (1) create a new function ###################################*/
-    const Function & function = thunk.function();
+    const Function& function = thunk.function();
     vector<string> new_envars;
 
-    for ( const string & envar : function.envars() ) {
+    for ( const string& envar : function.envars() ) {
       if ( envar.compare( 0, sizeof( "_GG" ) - 1, "_GG" ) != 0 ) {
         new_envars.push_back( envar );
       }
@@ -177,13 +191,12 @@ int main( int argc, char * argv[] )
 
     executables.erase( function.hash() );
 
-    for ( const auto & tarball_hash : tarballs ) {
+    for ( const auto& tarball_hash : tarballs ) {
       values.erase( tarball_hash );
     }
 
     for ( auto it = values.begin(); it != values.end(); ) {
-      if ( it->second.length() == 0 or
-           it->second == "/__gg__/gcc-specs" ) {
+      if ( it->second.length() == 0 or it->second == "/__gg__/gcc-specs" ) {
         it++;
         continue;
       }
@@ -191,14 +204,14 @@ int main( int argc, char * argv[] )
       it = values.erase( it );
     }
 
-    for ( const auto & dep : dependencies ) {
+    for ( const auto& dep : dependencies ) {
       const string dep_hash = get_hash( dep );
       string dep_path;
 
-      if ( dep.compare( 0, sysroot.string().length(), sysroot.string() ) == 0 ) {
+      if ( dep.compare( 0, sysroot.string().length(), sysroot.string() )
+           == 0 ) {
         dep_path = dep.substr( sysroot.string().length() );
-      }
-      else {
+      } else {
         dep_path = dep;
       }
 
@@ -207,17 +220,19 @@ int main( int argc, char * argv[] )
     }
 
     /* (3) create a new thunk ######################################*/
-    Thunk new_thunk { move( new_function ), move( values ), {},
-                      move( executables ), { "output" } };
+    Thunk new_thunk { move( new_function ),
+                      move( values ),
+                      {},
+                      move( executables ),
+                      { "output" } };
 
     new_thunk.set_timeout( PREPROCESS_TIMEOUT );
 
     /* (4) clean up and write output ###############################*/
     roost::remove_directory( sysroot );
     ThunkWriter::write( new_thunk, execution_root / "output" );
-  }
-  catch ( const exception &  e ) {
-    print_exception( argv[ 0 ], e );
+  } catch ( const exception& e ) {
+    print_exception( argv[0], e );
     return EXIT_FAILURE;
   }
 

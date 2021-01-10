@@ -2,34 +2,41 @@
 
 #include "tracer.hh"
 
-#include <sys/ptrace.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <sys/user.h>
-#include <sys/stat.h>
+#include <cstring>
+#include <errno.h>
+#include <exception>
 #include <linux/limits.h>
 #include <signal.h>
-#include <errno.h>
-#include <cstring>
 #include <sstream>
-#include <exception>
+#include <sys/ptrace.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <sys/user.h>
+#include <sys/wait.h>
 
 #include "util/exception.hh"
 
 using namespace std;
+using namespace gg;
 
-template <typename T> void zero( T & x ) { memset( &x, 0, sizeof( x ) ); }
+template<typename T>
+void zero( T& x )
+{
+  memset( &x, 0, sizeof( x ) );
+}
 
-TracerFlock::TracerFlock( const ProcessTracer::entry_type & before_entry_function,
-                          const ProcessTracer::exit_type & after_exit_function )
-  : before_entry_function_( before_entry_function ),
-    after_exit_function_( after_exit_function )
+TracerFlock::TracerFlock(
+  const ProcessTracer::entry_type& before_entry_function,
+  const ProcessTracer::exit_type& after_exit_function )
+  : before_entry_function_( before_entry_function )
+  , after_exit_function_( after_exit_function )
 {}
 
 void TracerFlock::insert( const pid_t tracee_pid )
 {
   if ( tracers_.count( tracee_pid ) != 0 ) {
-    throw runtime_error( "bad attempt to insert pid " + to_string( tracee_pid ) );
+    throw runtime_error( "bad attempt to insert pid "
+                         + to_string( tracee_pid ) );
   }
 
   tracers_.emplace( make_pair( tracee_pid, tracee_pid ) );
@@ -38,7 +45,8 @@ void TracerFlock::insert( const pid_t tracee_pid )
 void TracerFlock::remove( const pid_t tracee_pid )
 {
   if ( tracers_.count( tracee_pid ) != 1 ) {
-    throw runtime_error( "bad attempt to remove pid " + to_string( tracee_pid ) );
+    throw runtime_error( "bad attempt to remove pid "
+                         + to_string( tracee_pid ) );
   }
 
   tracers_.erase( tracee_pid );
@@ -46,13 +54,15 @@ void TracerFlock::remove( const pid_t tracee_pid )
 
 void TracerFlock::loop_until_all_done()
 {
-  while ( not ( tracers_.empty() and children_.empty() ) ) {
+  while ( not( tracers_.empty() and children_.empty() ) ) {
     siginfo_t infop;
     zero( infop );
-    CheckSystemCall( "waitid", waitid( P_ALL, 0, &infop, WEXITED | WSTOPPED | WNOWAIT ) );
+    CheckSystemCall( "waitid",
+                     waitid( P_ALL, 0, &infop, WEXITED | WSTOPPED | WNOWAIT ) );
 
     if ( infop.si_signo != SIGCHLD ) {
-      throw runtime_error( "waitid: unexpected value in siginfo_t si_signo field (not SIGCHLD)" );
+      throw runtime_error(
+        "waitid: unexpected value in siginfo_t si_signo field (not SIGCHLD)" );
     }
 
     const pid_t process_with_event = infop.si_pid;
@@ -60,10 +70,11 @@ void TracerFlock::loop_until_all_done()
     if ( infop.si_code != CLD_TRAPPED ) {
       /* handle an event on a child process */
       if ( children_.count( process_with_event ) == 0 ) {
-        throw runtime_error( "unexpected event from child PID " + to_string( process_with_event ) );
+        throw runtime_error( "unexpected event from child PID "
+                             + to_string( process_with_event ) );
       }
 
-      ChildProcess & cp = children_.at( process_with_event );
+      ChildProcess& cp = children_.at( process_with_event );
       cp.wait( true );
       if ( cp.terminated() ) {
         if ( cp.exit_status() ) {
@@ -74,13 +85,18 @@ void TracerFlock::loop_until_all_done()
 
         /* resume tracee that was waiting for this ChildProcess to complete */
         if ( tracers_waiting_for_children_.count( process_with_event ) ) {
-          const pid_t tracee_pid = tracers_waiting_for_children_.at( process_with_event );
+          const pid_t tracee_pid
+            = tracers_waiting_for_children_.at( process_with_event );
           if ( tracers_.count( tracee_pid ) != 1 ) {
-            throw runtime_error( "can't find tracee process " + to_string( tracee_pid ) + " to wake up from end of child " + to_string( process_with_event ) );
+            throw runtime_error( "can't find tracee process "
+                                 + to_string( tracee_pid )
+                                 + " to wake up from end of child "
+                                 + to_string( process_with_event ) );
           }
 
           if ( not tracers_.at( tracee_pid ).is_paused() ) {
-            throw runtime_error( "waking up " + to_string( tracee_pid ) + " but it was not paused" );
+            throw runtime_error( "waking up " + to_string( tracee_pid )
+                                 + " but it was not paused" );
           }
 
           tracers_.at( tracee_pid ).resume( 0 );
@@ -101,13 +117,14 @@ void TracerFlock::loop_until_all_done()
 
           insert( process_with_event );
         } else {
-          throw runtime_error( "unexpected event from PID " + to_string( process_with_event ) );
+          throw runtime_error( "unexpected event from PID "
+                               + to_string( process_with_event ) );
         }
       }
 
-      if ( tracers_.at( process_with_event ).handle_one_event( *this,
-                                                               before_entry_function_,
-                                                               after_exit_function_ ) ) {
+      if ( tracers_.at( process_with_event )
+             .handle_one_event(
+               *this, before_entry_function_, after_exit_function_ ) ) {
         /* tracer is done and ready to be destructed */
         remove( process_with_event );
       }
@@ -115,7 +132,7 @@ void TracerFlock::loop_until_all_done()
   }
 }
 
-void TracerFlock::add_child_process( ChildProcess && child_process )
+void TracerFlock::add_child_process( ChildProcess&& child_process )
 {
   children_.insert( make_pair( child_process.pid(), move( child_process ) ) );
 }
@@ -127,27 +144,29 @@ ProcessTracer::ProcessTracer( const pid_t tracee_pid )
 void ProcessTracer::set_ptrace_options() const
 {
   /* set ptrace options to trace children of the tracee */
-  CheckSystemCall( "ptrace(SETOPTIONS)", ptrace( PTRACE_SETOPTIONS, tracee_pid_, 0,
-                                                 PTRACE_O_TRACESYSGOOD |
-                                                 PTRACE_O_TRACEEXEC |
-                                                 PTRACE_O_TRACEEXIT |
-                                                 PTRACE_O_TRACEFORK |
-                                                 PTRACE_O_TRACEVFORK |
-                                                 PTRACE_O_TRACECLONE |
-                                                 PTRACE_O_EXITKILL ) );
+  CheckSystemCall( "ptrace(SETOPTIONS)",
+                   ptrace( PTRACE_SETOPTIONS,
+                           tracee_pid_,
+                           0,
+                           PTRACE_O_TRACESYSGOOD | PTRACE_O_TRACEEXEC
+                             | PTRACE_O_TRACEEXIT | PTRACE_O_TRACEFORK
+                             | PTRACE_O_TRACEVFORK | PTRACE_O_TRACECLONE
+                             | PTRACE_O_EXITKILL ) );
 }
 
 /* blocking wait on one process */
-bool ProcessTracer::handle_one_event( TracerFlock & flock,
-                                      const entry_type & before_entry_function ,
-                                      const exit_type & after_exit_function )
+bool ProcessTracer::handle_one_event( TracerFlock& flock,
+                                      const entry_type& before_entry_function,
+                                      const exit_type& after_exit_function )
 {
   siginfo_t infop;
   zero( infop );
-  CheckSystemCall( "waitid", waitid( P_PID, tracee_pid_, &infop, WSTOPPED | WNOHANG ) );
+  CheckSystemCall( "waitid",
+                   waitid( P_PID, tracee_pid_, &infop, WSTOPPED | WNOHANG ) );
 
   if ( infop.si_pid == 0 ) {
-    throw runtime_error( "PID " + to_string( tracee_pid_ ) + " was not waitable" );
+    throw runtime_error( "PID " + to_string( tracee_pid_ )
+                         + " was not waitable" );
   }
 
   if ( infop.si_pid != tracee_pid_ ) {
@@ -155,7 +174,8 @@ bool ProcessTracer::handle_one_event( TracerFlock & flock,
   }
 
   if ( infop.si_signo != SIGCHLD ) {
-    throw runtime_error( "waitid: unexpected value in siginfo_t si_signo field (not SIGCHLD)" );
+    throw runtime_error(
+      "waitid: unexpected value in siginfo_t si_signo field (not SIGCHLD)" );
   }
 
   if ( infop.si_code != CLD_TRAPPED ) {
@@ -171,27 +191,27 @@ bool ProcessTracer::handle_one_event( TracerFlock & flock,
 
     set_ptrace_options();
     options_set_ = true;
-  } else if ( (infop.si_status & 0xff) == SIGTRAP ) {
-    const unsigned int ptrace_event = (infop.si_status & 0xff00) >> 8;
+  } else if ( ( infop.si_status & 0xff ) == SIGTRAP ) {
+    const unsigned int ptrace_event = ( infop.si_status & 0xff00 ) >> 8;
 
     switch ( ptrace_event ) {
-    case PTRACE_EVENT_FORK:
-    case PTRACE_EVENT_VFORK:
-    case PTRACE_EVENT_CLONE:
-      /* ignore these events; we will trace the process when it shows up with a SIGSTOP */
-      break;
+      case PTRACE_EVENT_FORK:
+      case PTRACE_EVENT_VFORK:
+      case PTRACE_EVENT_CLONE:
+        /* ignore these events; we will trace the process when it shows up with
+         * a SIGSTOP */
+        break;
 
-    case PTRACE_EVENT_EXIT:
-      return true;
-      break;
+      case PTRACE_EVENT_EXIT:
+        return true;
+        break;
 
-    case PTRACE_EVENT_EXEC:
-      {
+      case PTRACE_EVENT_EXEC: {
         /* get former thread ID */
         long former_pid;
-        CheckSystemCall( "ptrace(PTRACE_GETEVENTMSG)",
-                         ptrace( PTRACE_GETEVENTMSG, tracee_pid_, nullptr, &former_pid ) );
-
+        CheckSystemCall(
+          "ptrace(PTRACE_GETEVENTMSG)",
+          ptrace( PTRACE_GETEVENTMSG, tracee_pid_, nullptr, &former_pid ) );
 
         if ( static_cast<pid_t>( former_pid ) != tracee_pid_ ) {
           flock.remove( former_pid );
@@ -200,15 +220,19 @@ bool ProcessTracer::handle_one_event( TracerFlock & flock,
 
       break;
 
-    default:
-      throw runtime_error( "unhandled ptrace event type: " + to_string( ptrace_event ) );
+      default:
+        throw runtime_error( "unhandled ptrace event type: "
+                             + to_string( ptrace_event ) );
     }
-  } else if ( infop.si_status == (SIGTRAP | 0x80) ) {
+  } else if ( infop.si_status == ( SIGTRAP | 0x80 ) ) {
     if ( not info_.syscall_invocation.initialized() ) {
       /* syscall entry */
       errno = 0;
-      const long syscall_no = ptrace( PTRACE_PEEKUSER, tracee_pid_, sizeof( long ) * ORIG_RAX );
-      if ( errno ) { throw unix_error( "ptrace" ); }
+      const long syscall_no
+        = ptrace( PTRACE_PEEKUSER, tracee_pid_, sizeof( long ) * ORIG_RAX );
+      if ( errno ) {
+        throw unix_error( "ptrace" );
+      }
 
       info_.syscall_invocation.initialize( tracee_pid_, syscall_no );
       before_entry_function( info_, flock );
@@ -226,8 +250,11 @@ bool ProcessTracer::handle_one_event( TracerFlock & flock,
     } else {
       /* syscall exit */
       errno = 0;
-      long syscall_ret = ptrace( PTRACE_PEEKUSER, tracee_pid_, sizeof( long ) * RAX );
-      if ( errno ) { throw unix_error( "ptrace" ); }
+      long syscall_ret
+        = ptrace( PTRACE_PEEKUSER, tracee_pid_, sizeof( long ) * RAX );
+      if ( errno ) {
+        throw unix_error( "ptrace" );
+      }
 
       info_.syscall_invocation->set_retval( syscall_ret );
       after_exit_function( info_ );
@@ -235,7 +262,8 @@ bool ProcessTracer::handle_one_event( TracerFlock & flock,
     }
   } else if ( infop.si_status > SIGRTMAX ) {
     cerr << "other ptrace event (status=" << infop.si_status << ")\n";
-    throw runtime_error( "unexpected ptrace event " + to_string( infop.si_status ) );
+    throw runtime_error( "unexpected ptrace event "
+                         + to_string( infop.si_status ) );
   } else {
     /* received signal */
 
@@ -249,10 +277,10 @@ bool ProcessTracer::handle_one_event( TracerFlock & flock,
   return false;
 }
 
-ProcessTracer::ProcessTracer( ProcessTracer && pt )
-  : tracee_pid_( pt.tracee_pid_ ),
-    options_set_( pt.options_set_ ),
-    info_( pt.info_ )
+ProcessTracer::ProcessTracer( ProcessTracer&& pt )
+  : tracee_pid_( pt.tracee_pid_ )
+  , options_set_( pt.options_set_ )
+  , info_( pt.info_ )
 {
   pt.tracee_pid_ = -1;
 }
@@ -260,24 +288,26 @@ ProcessTracer::ProcessTracer( ProcessTracer && pt )
 ProcessTracer::~ProcessTracer()
 {
   if ( tracee_pid_ != -1 ) {
-    CheckSystemCall( "ptrace(DETACH)", ptrace( PTRACE_DETACH, tracee_pid_, nullptr, 0 ) );
+    CheckSystemCall( "ptrace(DETACH)",
+                     ptrace( PTRACE_DETACH, tracee_pid_, nullptr, 0 ) );
   }
 }
 
-Tracer::Tracer( const std::string & name,
-                function<int()> && child_procedure,
-                const ProcessTracer::entry_type & before_entry_function,
-                const ProcessTracer::exit_type & after_exit_function,
-                function<void()> && preparation_procedure )
+Tracer::Tracer( const std::string& name,
+                function<int()>&& child_procedure,
+                const ProcessTracer::entry_type& before_entry_function,
+                const ProcessTracer::exit_type& after_exit_function,
+                function<void()>&& preparation_procedure )
   : flock_( before_entry_function, after_exit_function )
 {
   /* create a ChildProcess that will be traced */
-  ChildProcess tp { name,
-      [preparation_procedure, child_procedure]() {
-      preparation_procedure();
-      CheckSystemCall( "ptrace(TRACEME)", ptrace( PTRACE_TRACEME ) );
-      raise( SIGSTOP );
-      return child_procedure(); } };
+  ChildProcess tp { name, [preparation_procedure, child_procedure]() {
+                     preparation_procedure();
+                     CheckSystemCall( "ptrace(TRACEME)",
+                                      ptrace( PTRACE_TRACEME ) );
+                     raise( SIGSTOP );
+                     return child_procedure();
+                   } };
 
   flock_.insert( tp.pid() );
   flock_.add_child_process( move( tp ) );
@@ -287,7 +317,8 @@ void TracerFlock::resume_after_termination( const pid_t child_to_wait_for,
                                             const pid_t tracee_to_resume )
 {
   if ( children_.count( child_to_wait_for ) != 1 ) {
-    throw runtime_error( "unknown child process " + to_string( child_to_wait_for ) );
+    throw runtime_error( "unknown child process "
+                         + to_string( child_to_wait_for ) );
   }
 
   if ( tracers_.count( tracee_to_resume ) != 1 ) {
@@ -295,15 +326,18 @@ void TracerFlock::resume_after_termination( const pid_t child_to_wait_for,
   }
 
   if ( tracers_.at( tracee_to_resume ).is_paused() != true ) {
-    throw runtime_error( "tracee " + to_string( tracee_to_resume ) + " is not paused" );
+    throw runtime_error( "tracee " + to_string( tracee_to_resume )
+                         + " is not paused" );
   }
 
-  tracers_waiting_for_children_.insert( { child_to_wait_for, tracee_to_resume } );
+  tracers_waiting_for_children_.insert(
+    { child_to_wait_for, tracee_to_resume } );
 }
 
 void ProcessTracer::resume( const int signal )
 {
   info_.pause = false;
 
-  CheckSystemCall( "ptrace(SYSCALL)", ptrace( PTRACE_SYSCALL, tracee_pid_, nullptr, signal ) );
+  CheckSystemCall( "ptrace(SYSCALL)",
+                   ptrace( PTRACE_SYSCALL, tracee_pid_, nullptr, signal ) );
 }

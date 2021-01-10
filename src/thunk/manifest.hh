@@ -1,10 +1,11 @@
 /* -*-mode:c++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 
-#ifndef MANIFEST_HH
-#define MANIFEST_HH
+#pragma once
 
-#include <vector>
 #include <string>
+#include <vector>
+
+namespace gg {
 
 class FileManifest
 {
@@ -18,10 +19,10 @@ private:
 public:
   FileManifest() {}
 
-  void add_dummy_directory( const std::string & dummy_dir );
-  void add_output_tag( const std::string & filename, const std::string & tag );
+  void add_dummy_directory( const std::string& dummy_dir );
+  void add_output_tag( const std::string& filename, const std::string& tag );
 
   std::string serialize() const;
 };
 
-#endif /* MANIFEST_HH */
+} // namespace gg

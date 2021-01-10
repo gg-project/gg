@@ -1,13 +1,14 @@
 /* -*-mode:c++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 
-#ifndef NET_REDIS_HH
-#define NET_REDIS_HH
+#pragma once
 
-#include <vector>
-#include <string>
 #include <functional>
+#include <string>
+#include <vector>
 
 #include "net/requests.hh"
+
+namespace gg {
 
 struct RedisClientConfig
 {
@@ -27,17 +28,19 @@ private:
   RedisClientConfig config_;
 
 public:
-  Redis( const RedisClientConfig & config )
+  Redis( const RedisClientConfig& config )
     : config_( config )
   {}
 
-  void upload_files( const std::vector<storage::PutRequest> & upload_requests,
-                     const std::function<void( const storage::PutRequest & )> & success_callback
-                       = []( const storage::PutRequest & ){} );
+  void upload_files(
+    const std::vector<storage::PutRequest>& upload_requests,
+    const std::function<void( const storage::PutRequest& )>& success_callback
+    = []( const storage::PutRequest& ) {} );
 
-  void download_files( const std::vector<storage::GetRequest> & download_requests,
-                       const std::function<void( const storage::GetRequest & )> & success_callback
-                         = []( const storage::GetRequest & ){} );
+  void download_files(
+    const std::vector<storage::GetRequest>& download_requests,
+    const std::function<void( const storage::GetRequest& )>& success_callback
+    = []( const storage::GetRequest& ) {} );
 };
 
-#endif /* NET_REDIS_HH */
+} // namespace gg

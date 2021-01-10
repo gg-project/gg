@@ -1,10 +1,11 @@
 /* -*-mode:c++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 
-#ifndef TEMP_DIR_HH
-#define TEMP_DIR_HH
+#pragma once
 
-#include <vector>
 #include <string>
+#include <vector>
+
+namespace gg {
 
 class UniqueDirectory
 {
@@ -15,20 +16,20 @@ protected:
   bool owns_dir_;
 
 public:
-  UniqueDirectory( const std::string & dirname_template );
+  UniqueDirectory( const std::string& dirname_template );
   virtual ~UniqueDirectory() {}
 
   std::string name( void ) const;
 
   /* ban copying */
-  UniqueDirectory( const UniqueDirectory & other ) = delete;
-  UniqueDirectory & operator=( const UniqueDirectory & other ) = delete;
+  UniqueDirectory( const UniqueDirectory& other ) = delete;
+  UniqueDirectory& operator=( const UniqueDirectory& other ) = delete;
 
   /* allow move constructor */
-  UniqueDirectory( UniqueDirectory && other );
+  UniqueDirectory( UniqueDirectory&& other );
 
   /* ... but not move assignment operator */
-  UniqueDirectory & operator=( UniqueDirectory && other ) = delete;
+  UniqueDirectory& operator=( UniqueDirectory&& other ) = delete;
 };
 
 /* TempDirectory is deleted when object destroyed */
@@ -38,7 +39,9 @@ public:
   using UniqueDirectory::UniqueDirectory;
 
   /* allow move constructor */
-  TempDirectory( TempDirectory && other ) : UniqueDirectory( std::move( other ) ) {}
+  TempDirectory( TempDirectory&& other )
+    : UniqueDirectory( std::move( other ) )
+  {}
 
   ~TempDirectory();
 
@@ -47,4 +50,4 @@ public:
   void remove();
 };
 
-#endif /* TEMP_DIR_HH */
+} // namespace gg

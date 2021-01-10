@@ -7,4 +7,5 @@ AlwaysBreakAfterReturnType: None
 AlwaysBreakAfterDefinitionReturnType: None
 SpaceBeforeCpp11BracedList: true
 BreakBeforeBinaryOperators: All
+FixNamespaceComments: true
 ...

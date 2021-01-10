@@ -1,9 +1,10 @@
 /* -*-mode:c++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 
-#ifndef UTIL_ARGS_HH
-#define UTIL_ARGS_HH
+#pragma once
 
 #include <vector>
+
+namespace gg {
 
 struct ExpandedArgs
 {
@@ -16,4 +17,4 @@ struct ExpandedArgs
   static ExpandedArgs expand( const int argc, char * const * argv );
 };
 
-#endif /* UTIL_ARGS_HH */
+}

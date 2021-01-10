@@ -11,7 +11,8 @@
 #include "util/util.hh"
 
 using namespace std;
-using namespace gg::thunk;
+using namespace gg;
+using namespace thunk;
 
 void usage( const char * argv0 )
 {

@@ -7,8 +7,10 @@
 
 #include "protobufs/gg.pb.h"
 #include "thunk/thunk.hh"
-#include "util/serialization.hh"
 #include "util/path.hh"
+#include "util/serialization.hh"
+
+namespace gg {
 
 class ThunkReader
 {
@@ -16,6 +18,9 @@ private:
   ThunkReader();
 
 public:
-  static bool is_thunk( const roost::path & path );
-  static gg::thunk::Thunk read( const roost::path & path, const std::string & hash = {} );
+  static bool is_thunk( const roost::path& path );
+  static gg::thunk::Thunk read( const roost::path& path,
+                                const std::string& hash = {} );
 };
+
+} // namespace gg

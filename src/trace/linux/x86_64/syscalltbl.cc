@@ -12,6 +12,8 @@
 // from <keyutils.h>
 typedef int32_t key_serial_t;
 
+namespace gg {
+
 const SystemCallSignature & syscall_signature( const size_t syscall_no )
 {
   static const SystemCallSignature syscall_signatures[] =
@@ -3585,3 +3587,5 @@ const SystemCallSignature & syscall_signature( const size_t syscall_no )
 
   return syscall_signatures[ syscall_no ];
 }
+
+} // namespace gg

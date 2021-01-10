@@ -18,8 +18,9 @@
 #include "util/path.hh"
 
 using namespace std;
-using namespace std::chrono;
-using namespace gg::thunk;
+using namespace chrono;
+using namespace gg;
+using namespace thunk;
 
 static constexpr milliseconds TIMEOUT = 20s;
 

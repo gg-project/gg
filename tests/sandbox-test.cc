@@ -1,24 +1,25 @@
 /* -*-mode:c++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 
-#include <sys/types.h>
-#include <sys/stat.h>
 #include <fcntl.h>
-#include <unistd.h>
 #include <iostream>
 #include <string>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
 #include <unordered_map>
 
 #include "sandbox/sandbox.hh"
 #include "util/exception.hh"
 
 using namespace std;
+using namespace gg;
 
-void usage( const char * argv0 )
+void usage( const char* argv0 )
 {
   cerr << argv0 << endl;
 }
 
-int main( int argc, char * argv[] )
+int main( int argc, char* argv[] )
 {
   try {
     if ( argc <= 0 ) {
@@ -26,7 +27,7 @@ int main( int argc, char * argv[] )
     }
 
     if ( argc != 1 ) {
-      usage( argv[ 0 ] );
+      usage( argv[0] );
       return EXIT_FAILURE;
     }
 
@@ -38,25 +39,19 @@ int main( int argc, char * argv[] )
       { "/dev/null", { true, true, true } }
     };
 
-    SandboxedProcess sp_1(
-      "sp_1",
-      ".",
-      allowed_files_1,
-      []()
-      {
-        /* XXX before, this was actually open( "/dev/null" ), but for
-          some unknown reason, it was compiled to openat( -100, "/dev/null")
-          in Ubuntu 17.10. Weird, right? */
-        execl( "/dev/null", "/dev/null" );
-        return 0;
-      }
-    );
+    SandboxedProcess sp_1( "sp_1", ".", allowed_files_1, []() {
+      /* XXX before, this was actually open( "/dev/null" ), but for
+        some unknown reason, it was compiled to openat( -100, "/dev/null")
+        in Ubuntu 17.10. Weird, right? */
+      execl( "/dev/null", "/dev/null" );
+      return 0;
+    } );
 
     try {
       sp_1.execute();
       successful_tests++;
+    } catch ( ... ) {
     }
-    catch (...) {}
 
     /* test 2 */
     unordered_map<string, Permissions> allowed_files_2 {
@@ -64,22 +59,15 @@ int main( int argc, char * argv[] )
       { "/dev/zero", { false, true, true } },
     };
 
-    SandboxedProcess sp_2(
-      "sp_2",
-      ".",
-      allowed_files_2,
-      []()
-      {
-        close( open( "/dev/null", O_WRONLY ) );
-        close( open( "/dev/zero", O_RDONLY ) );
-        return 0;
-      }
-    );
+    SandboxedProcess sp_2( "sp_2", ".", allowed_files_2, []() {
+      close( open( "/dev/null", O_WRONLY ) );
+      close( open( "/dev/zero", O_RDONLY ) );
+      return 0;
+    } );
 
     try {
       sp_2.execute();
-    }
-    catch (...) {
+    } catch ( ... ) {
       successful_tests++;
     }
 
@@ -89,22 +77,15 @@ int main( int argc, char * argv[] )
       { "/dev/null", { true, true, true } },
     };
 
-    SandboxedProcess sp_3(
-      "sp_3",
-      ".",
-      allowed_files_3,
-      []()
-      {
-        struct stat buf;
-        stat( "/dev/random", &buf );
-        return 0;
-      }
-    );
+    SandboxedProcess sp_3( "sp_3", ".", allowed_files_3, []() {
+      struct stat buf;
+      stat( "/dev/random", &buf );
+      return 0;
+    } );
 
     try {
       sp_3.execute();
-    }
-    catch (...) {
+    } catch ( ... ) {
       successful_tests++;
     }
 
@@ -113,22 +94,15 @@ int main( int argc, char * argv[] )
       { "/bin/blahblah", { true, false, true } },
     };
 
-    SandboxedProcess sp_4(
-      "sp_4",
-      ".",
-      allowed_files_4,
-      []()
-      {
-        execl( "/bin/blahblah", "/bin/blahblah" );
-        return 0;
-      }
-    );
+    SandboxedProcess sp_4( "sp_4", ".", allowed_files_4, []() {
+      execl( "/bin/blahblah", "/bin/blahblah" );
+      return 0;
+    } );
 
     try {
       sp_4.execute();
       successful_tests++;
-    }
-    catch (...) {
+    } catch ( ... ) {
     }
 
     /* test 5 */
@@ -136,28 +110,20 @@ int main( int argc, char * argv[] )
       { "/bin/ls", { true, false, false } },
     };
 
-    SandboxedProcess sp_5(
-      "sp_5",
-      ".",
-      allowed_files_5,
-      []()
-      {
-        execl( "/bin/ls", "/bin/ls" );
-        return 0;
-      }
-    );
+    SandboxedProcess sp_5( "sp_5", ".", allowed_files_5, []() {
+      execl( "/bin/ls", "/bin/ls" );
+      return 0;
+    } );
 
     try {
       sp_5.execute();
-    }
-    catch (...) {
+    } catch ( ... ) {
       successful_tests++;
     }
 
     return successful_tests != total_tests;
-  }
-  catch ( const exception &  e ) {
-    print_exception( argv[ 0 ], e );
+  } catch ( const exception& e ) {
+    print_exception( argv[0], e );
     return EXIT_FAILURE;
   }
 

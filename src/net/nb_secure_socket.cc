@@ -7,102 +7,109 @@
 #include "util/poller.hh"
 
 using namespace std;
+using namespace gg;
 
-Poller::Action::Action( NBSecureSocket & s_socket,
-                        const PollDirection & s_direction,
-                        const CallbackType & s_callback,
-                        const std::function<bool(void)> & s_when_interested,
-                        const std::function<void(void)> & fderror_callback )
-  : fd( s_socket ), direction( s_direction ), callback(), when_interested(),
-    fderror_callback( fderror_callback ), active( true )
+Poller::Action::Action( NBSecureSocket& s_socket,
+                        const PollDirection& s_direction,
+                        const CallbackType& s_callback,
+                        const std::function<bool( void )>& s_when_interested,
+                        const std::function<void( void )>& fderror_callback )
+  : fd( s_socket )
+  , direction( s_direction )
+  , callback()
+  , when_interested()
+  , fderror_callback( fderror_callback )
+  , active( true )
 {
   if ( direction == Out ) { /* write */
-    callback =
-      [s_callback, &s_socket] ()
-      {
-        Result retval;
+    callback = [s_callback, &s_socket]() {
+      Result retval;
 
-        if ( s_socket.mode() == NBSecureSocket::Mode::connect and not s_socket.connected() ) {
-          /* we're not connected yet, so let's continue */
-          s_socket.continue_SSL_connect();
-        }
-        else if ( s_socket.mode() == NBSecureSocket::Mode::accept and not s_socket.accepted() ) {
-          /* we've not accepted yet, so let's continue */
-          s_socket.continue_SSL_accept();
-        }
-        else if ( s_socket.state() == NBSecureSocket::State::needs_ssl_write_to_write ) {
-          s_socket.continue_SSL_write();
-        }
-        else if ( s_socket.state() == NBSecureSocket::State::ready ) {
-          if ( not s_socket.something_to_write() ) {
-            retval = s_callback();
-          }
-
-          s_socket.continue_SSL_write();
-        }
-        else if ( s_socket.state() == NBSecureSocket::State::needs_ssl_write_to_read ) {
-          s_socket.continue_SSL_read();
-        }
-        else {
-          throw runtime_error( "unexpected state: " + to_string(static_cast<int>(s_socket.state())) );
+      if ( s_socket.mode() == NBSecureSocket::Mode::connect
+           and not s_socket.connected() ) {
+        /* we're not connected yet, so let's continue */
+        s_socket.continue_SSL_connect();
+      } else if ( s_socket.mode() == NBSecureSocket::Mode::accept
+                  and not s_socket.accepted() ) {
+        /* we've not accepted yet, so let's continue */
+        s_socket.continue_SSL_accept();
+      } else if ( s_socket.state()
+                  == NBSecureSocket::State::needs_ssl_write_to_write ) {
+        s_socket.continue_SSL_write();
+      } else if ( s_socket.state() == NBSecureSocket::State::ready ) {
+        if ( not s_socket.something_to_write() ) {
+          retval = s_callback();
         }
 
-        return retval;
-      };
+        s_socket.continue_SSL_write();
+      } else if ( s_socket.state()
+                  == NBSecureSocket::State::needs_ssl_write_to_read ) {
+        s_socket.continue_SSL_read();
+      } else {
+        throw runtime_error(
+          "unexpected state: "
+          + to_string( static_cast<int>( s_socket.state() ) ) );
+      }
 
-    when_interested =
-      [s_when_interested, &s_socket]()
-      {
-        return ( s_socket.state() == NBSecureSocket::State::needs_connect ) or
-               ( s_socket.state() == NBSecureSocket::State::needs_ssl_write_to_connect ) or
-               ( s_socket.state() == NBSecureSocket::State::needs_ssl_write_to_accept ) or
-               ( s_socket.state() == NBSecureSocket::State::needs_ssl_write_to_write ) or
-               ( s_socket.state() == NBSecureSocket::State::needs_ssl_write_to_read ) or
-               ( s_socket.state() == NBSecureSocket::State::ready and s_when_interested() );
-      };
+      return retval;
+    };
 
-  }
-  else /* direction == In */ { /* read */
-    callback =
-      [s_callback, &s_socket] ()
-      {
-        if ( s_socket.mode() == NBSecureSocket::Mode::connect and not s_socket.connected() ) {
-          /* we're not connected yet, so let's continue */
-          s_socket.continue_SSL_connect();
-        }
-        else if ( s_socket.mode() == NBSecureSocket::Mode::accept and not s_socket.accepted() ) {
-          /* we've not accepted yet, so let's continue */
-          s_socket.continue_SSL_accept();
-        }
-        else if ( s_socket.state() == NBSecureSocket::State::needs_ssl_read_to_write ) {
-          s_socket.continue_SSL_write();
-        }
-        else if ( s_socket.state() == NBSecureSocket::State::needs_ssl_read_to_read or
-                  s_socket.state() == NBSecureSocket::State::ready ) {
-          s_socket.continue_SSL_read();
-        }
-        else {
-          throw runtime_error( "unexpected state" );
-        }
+    when_interested = [s_when_interested, &s_socket]() {
+      return ( s_socket.state() == NBSecureSocket::State::needs_connect )
+             or ( s_socket.state()
+                  == NBSecureSocket::State::needs_ssl_write_to_connect )
+             or ( s_socket.state()
+                  == NBSecureSocket::State::needs_ssl_write_to_accept )
+             or ( s_socket.state()
+                  == NBSecureSocket::State::needs_ssl_write_to_write )
+             or ( s_socket.state()
+                  == NBSecureSocket::State::needs_ssl_write_to_read )
+             or ( s_socket.state() == NBSecureSocket::State::ready
+                  and s_when_interested() );
+    };
 
-        if ( s_socket.something_to_read() ) {
-          return s_callback();
-        }
+  } else /* direction == In */ { /* read */
+    callback = [s_callback, &s_socket]() {
+      if ( s_socket.mode() == NBSecureSocket::Mode::connect
+           and not s_socket.connected() ) {
+        /* we're not connected yet, so let's continue */
+        s_socket.continue_SSL_connect();
+      } else if ( s_socket.mode() == NBSecureSocket::Mode::accept
+                  and not s_socket.accepted() ) {
+        /* we've not accepted yet, so let's continue */
+        s_socket.continue_SSL_accept();
+      } else if ( s_socket.state()
+                  == NBSecureSocket::State::needs_ssl_read_to_write ) {
+        s_socket.continue_SSL_write();
+      } else if ( s_socket.state()
+                    == NBSecureSocket::State::needs_ssl_read_to_read
+                  or s_socket.state() == NBSecureSocket::State::ready ) {
+        s_socket.continue_SSL_read();
+      } else {
+        throw runtime_error( "unexpected state" );
+      }
 
-        return Result {};
-      };
+      if ( s_socket.something_to_read() ) {
+        return s_callback();
+      }
 
-    when_interested =
-      [s_when_interested, &s_socket]()
-      {
-        return ( s_socket.state() == NBSecureSocket::State::needs_connect ) or
-               ( s_socket.state() == NBSecureSocket::State::needs_accept ) or
-               ( s_socket.state() == NBSecureSocket::State::needs_ssl_read_to_connect ) or
-               ( s_socket.state() == NBSecureSocket::State::needs_ssl_read_to_accept ) or
-               ( s_socket.state() == NBSecureSocket::State::needs_ssl_read_to_write ) or
-               ( s_socket.state() == NBSecureSocket::State::needs_ssl_read_to_read ) or
-               ( s_socket.state() == NBSecureSocket::State::ready and s_when_interested() );
-      };
+      return Result {};
+    };
+
+    when_interested = [s_when_interested, &s_socket]() {
+      return ( s_socket.state() == NBSecureSocket::State::needs_connect )
+             or ( s_socket.state() == NBSecureSocket::State::needs_accept )
+             or ( s_socket.state()
+                  == NBSecureSocket::State::needs_ssl_read_to_connect )
+             or ( s_socket.state()
+                  == NBSecureSocket::State::needs_ssl_read_to_accept )
+             or ( s_socket.state()
+                  == NBSecureSocket::State::needs_ssl_read_to_write )
+             or ( s_socket.state()
+                  == NBSecureSocket::State::needs_ssl_read_to_read )
+             or ( s_socket.state() == NBSecureSocket::State::ready
+                  and s_when_interested() );
+    };
   }
 }
 
@@ -124,25 +131,23 @@ void NBSecureSocket::continue_SSL_connect()
     verify_no_errors();
   }
 
-  if ( state_ == State::needs_connect or
-       state_ == State::needs_ssl_write_to_connect or
-       state_ == State::needs_ssl_read_to_connect )
-  {
+  if ( state_ == State::needs_connect
+       or state_ == State::needs_ssl_write_to_connect
+       or state_ == State::needs_ssl_read_to_connect ) {
     try {
       SecureSocket::connect();
-    }
-    catch ( const ssl_error & s ) {
+    } catch ( const ssl_error& s ) {
       switch ( s.error_code() ) {
-      case SSL_ERROR_WANT_READ:
-        state_ = State::needs_ssl_read_to_connect;
-        break;
+        case SSL_ERROR_WANT_READ:
+          state_ = State::needs_ssl_read_to_connect;
+          break;
 
-      case SSL_ERROR_WANT_WRITE:
-        state_ = State::needs_ssl_write_to_connect;
-        break;
+        case SSL_ERROR_WANT_WRITE:
+          state_ = State::needs_ssl_write_to_connect;
+          break;
 
-      default:
-        throw;
+        default:
+          throw;
       }
 
       return;
@@ -162,25 +167,23 @@ void NBSecureSocket::continue_SSL_accept()
     verify_no_errors();
   }
 
-  if ( state_ == State::needs_accept or
-       state_ == State::needs_ssl_write_to_accept or
-       state_ == State::needs_ssl_read_to_accept )
-  {
+  if ( state_ == State::needs_accept
+       or state_ == State::needs_ssl_write_to_accept
+       or state_ == State::needs_ssl_read_to_accept ) {
     try {
       SecureSocket::accept( state_ == State::needs_ssl_write_to_accept );
-    }
-    catch ( const ssl_error & s ) {
+    } catch ( const ssl_error& s ) {
       switch ( s.error_code() ) {
-      case SSL_ERROR_WANT_READ:
-        state_ = State::needs_ssl_read_to_accept;
-        break;
+        case SSL_ERROR_WANT_READ:
+          state_ = State::needs_ssl_read_to_accept;
+          break;
 
-      case SSL_ERROR_WANT_WRITE:
-        state_ = State::needs_ssl_write_to_accept;
-        break;
+        case SSL_ERROR_WANT_WRITE:
+          state_ = State::needs_ssl_write_to_accept;
+          break;
 
-      default:
-        throw;
+        default:
+          throw;
       }
 
       return;
@@ -197,21 +200,21 @@ void NBSecureSocket::continue_SSL_accept()
 void NBSecureSocket::continue_SSL_write()
 {
   try {
-    SecureSocket::write( write_buffer_.size() ? write_buffer_.front() : string(),
+    SecureSocket::write( write_buffer_.size() ? write_buffer_.front()
+                                              : string(),
                          state_ == State::needs_ssl_read_to_write );
-  }
-  catch ( ssl_error & s ) {
+  } catch ( ssl_error& s ) {
     switch ( s.error_code() ) {
-    case SSL_ERROR_WANT_READ:
-      state_ = State::needs_ssl_read_to_write;
-      break;
+      case SSL_ERROR_WANT_READ:
+        state_ = State::needs_ssl_read_to_write;
+        break;
 
-    case SSL_ERROR_WANT_WRITE:
-      state_ = State::needs_ssl_write_to_write;
-      break;
+      case SSL_ERROR_WANT_WRITE:
+        state_ = State::needs_ssl_write_to_write;
+        break;
 
-    default:
-      throw;
+      default:
+        throw;
     }
 
     return;
@@ -224,20 +227,20 @@ void NBSecureSocket::continue_SSL_write()
 void NBSecureSocket::continue_SSL_read()
 {
   try {
-    read_buffer_ += SecureSocket::read( state_ == State::needs_ssl_write_to_read );
-  }
-  catch ( ssl_error & s ) {
+    read_buffer_
+      += SecureSocket::read( state_ == State::needs_ssl_write_to_read );
+  } catch ( ssl_error& s ) {
     switch ( s.error_code() ) {
-    case SSL_ERROR_WANT_READ:
-      state_ = State::needs_ssl_read_to_read;
-      break;
+      case SSL_ERROR_WANT_READ:
+        state_ = State::needs_ssl_read_to_read;
+        break;
 
-    case SSL_ERROR_WANT_WRITE:
-      state_ = State::needs_ssl_write_to_read;
-      break;
+      case SSL_ERROR_WANT_WRITE:
+        state_ = State::needs_ssl_write_to_read;
+        break;
 
-    default:
-      throw;
+      default:
+        throw;
     }
 
     return;
@@ -257,7 +260,7 @@ unsigned int NBSecureSocket::buffer_bytes() const
 {
   unsigned int total_bytes = 0;
 
-  for ( const auto & buffer : write_buffer_ ) {
+  for ( const auto& buffer : write_buffer_ ) {
     total_bytes += buffer.size();
   }
 

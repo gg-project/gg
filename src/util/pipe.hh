@@ -1,12 +1,11 @@
 /* -*-mode:c++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 
-#ifndef PIPE_HH
-#define PIPE_HH
+#pragma once
 
 #include <utility>
 
 #include "file_descriptor.hh"
 
+namespace gg {
 std::pair<FileDescriptor, FileDescriptor> make_pipe();
-
-#endif /* PIPE_HH */
+}

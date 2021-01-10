@@ -1,24 +1,25 @@
 /* -*-mode:c++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 
-#ifndef FACTORY_HH
-#define FACTORY_HH
+#pragma once
 
-#include <string>
-#include <vector>
 #include <chrono>
+#include <string>
 #include <sys/types.h>
+#include <vector>
 
 #include "thunk/thunk.hh"
+
+namespace gg {
 
 class ThunkFactory
 {
 public:
   struct Options
   {
-    static constexpr int generate_manifest  = ( 1 << 0 );
+    static constexpr int generate_manifest = ( 1 << 0 );
     static constexpr int create_placeholder = ( 1 << 1 );
-    static constexpr int collect_data       = ( 1 << 2 );
-    static constexpr int include_filenames  = ( 1 << 3 );
+    static constexpr int collect_data = ( 1 << 2 );
+    static constexpr int include_filenames = ( 1 << 3 );
   };
 
   class Data
@@ -32,14 +33,14 @@ public:
   public:
     Data() {}
 
-    Data( const std::string & filename,
-          const std::string & real_filename = {},
-          const gg::ObjectType & type = gg::ObjectType::Value,
-          const std::string & hash = {} );
+    Data( const std::string& filename,
+          const std::string& real_filename = {},
+          const gg::ObjectType& type = gg::ObjectType::Value,
+          const std::string& hash = {} );
 
-    const std::string & filename() const { return filename_; }
-    const std::string & real_filename() const { return real_filename_; }
-    const std::string & hash() const { return hash_; }
+    const std::string& filename() const { return filename_; }
+    const std::string& real_filename() const { return real_filename_; }
+    const std::string& hash() const { return hash_; }
     gg::ObjectType type() const { return type_; }
   };
 
@@ -52,33 +53,39 @@ public:
     Optional<std::string> filename_ {};
 
   public:
-    Output( const std::string & tag ) : tag_( tag ) {}
-    Output( const std::string & tag, const std::string & filename )
-      : tag_( tag ), filename_( true, roost::path( filename ).lexically_normal().string() ) {}
+    Output( const std::string& tag )
+      : tag_( tag )
+    {}
+    Output( const std::string& tag, const std::string& filename )
+      : tag_( tag )
+      , filename_( true, roost::path( filename ).lexically_normal().string() )
+    {}
 
-    const std::string & tag() const { return tag_; }
-    const Optional<std::string> & filename() const { return filename_; }
+    const std::string& tag() const { return tag_; }
+    const Optional<std::string>& filename() const { return filename_; }
   };
 
 public:
-  static gg::thunk::Thunk create_thunk( const Function & function,
-                                        const std::vector<Data> & data,
-                                        const std::vector<Data> & executables,
-                                        const std::vector<Output> & outputs,
-                                        const std::chrono::milliseconds & timeout,
-                                        const bool include_filenames = true,
-                                        const std::map<std::string, std::string> & links = {} );
+  static gg::thunk::Thunk create_thunk(
+    const Function& function,
+    const std::vector<Data>& data,
+    const std::vector<Data>& executables,
+    const std::vector<Output>& outputs,
+    const std::chrono::milliseconds& timeout,
+    const bool include_filenames = true,
+    const std::map<std::string, std::string>& links = {} );
 
-  template<template <class...> class Container>
-  static std::string generate( const Function & function,
-                               const Container<Data> & data,
-                               const Container<Data> & executables,
-                               const Container<Output> & outputs,
-                               const Container<std::string> & dummy_dirs,
-                               const std::chrono::milliseconds & timeout =
-                                 std::chrono::milliseconds { 0 },
+  template<template<class...> class Container>
+  static std::string generate( const Function& function,
+                               const Container<Data>& data,
+                               const Container<Data>& executables,
+                               const Container<Output>& outputs,
+                               const Container<std::string>& dummy_dirs,
+                               const std::chrono::milliseconds& timeout
+                               = std::chrono::milliseconds { 0 },
                                const int options = 0,
-                               const std::map<std::string, std::string> & links = {} );
+                               const std::map<std::string, std::string>& links
+                               = {} );
 };
 
-#endif /* FACTORY_HH */
+} // namespace gg

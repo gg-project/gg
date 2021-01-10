@@ -8,12 +8,14 @@
 #include "exception.hh"
 
 using namespace std;
+using namespace gg;
 
 IPCSocket::IPCSocket()
-  : FileDescriptor( CheckSystemCall( "socket", socket( AF_UNIX, SOCK_STREAM, 0 ) ) )
+  : FileDescriptor(
+    CheckSystemCall( "socket", socket( AF_UNIX, SOCK_STREAM, 0 ) ) )
 {}
 
-sockaddr_un create_sockaddr_un( const string & path )
+sockaddr_un create_sockaddr_un( const string& path )
 {
   if ( path.size() >= sizeof( sockaddr_un::sun_path ) ) {
     throw runtime_error( "path size is too long" );
@@ -25,18 +27,20 @@ sockaddr_un create_sockaddr_un( const string & path )
   return addr;
 }
 
-void IPCSocket::bind( const string & path )
+void IPCSocket::bind( const string& path )
 {
   const sockaddr_un addr = create_sockaddr_un( path );
-  CheckSystemCall( "bind", ::bind( fd_num(), ( struct sockaddr *)&addr,
-                                   sizeof( sockaddr_un ) ) );
+  CheckSystemCall(
+    "bind",
+    ::bind( fd_num(), (struct sockaddr*)&addr, sizeof( sockaddr_un ) ) );
 }
 
-void IPCSocket::connect( const string & path )
+void IPCSocket::connect( const string& path )
 {
   const sockaddr_un addr = create_sockaddr_un( path );
-  CheckSystemCall( "connect", ::connect( fd_num(), ( struct sockaddr *)&addr,
-                                         sizeof( sockaddr_un ) ) );
+  CheckSystemCall(
+    "connect",
+    ::connect( fd_num(), (struct sockaddr*)&addr, sizeof( sockaddr_un ) ) );
 }
 
 void IPCSocket::listen( const int backlog )
@@ -46,5 +50,6 @@ void IPCSocket::listen( const int backlog )
 
 FileDescriptor IPCSocket::accept()
 {
-  return { CheckSystemCall( "accept", ::accept( fd_num(), nullptr, nullptr ) ) };
+  return { CheckSystemCall( "accept",
+                            ::accept( fd_num(), nullptr, nullptr ) ) };
 }

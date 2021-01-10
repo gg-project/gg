@@ -1,8 +1,8 @@
 /* -*-mode:c++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 
-#include <unistd.h>
 #include <cstring>
 #include <iostream>
+#include <unistd.h>
 
 #include "thunk/ggutils.hh"
 #include "thunk/placeholder.hh"
@@ -11,13 +11,14 @@
 #include "util/system_runner.hh"
 
 using namespace std;
+using namespace gg;
 
-void usage( const char * argv0 )
+void usage( const char* argv0 )
 {
   cerr << argv0 << "THUNK [execution args]" << endl;
 }
 
-int main( int argc, char * argv[] )
+int main( int argc, char* argv[] )
 {
   try {
     if ( argc <= 0 ) {
@@ -25,19 +26,18 @@ int main( int argc, char * argv[] )
     }
 
     if ( argc < 2 ) {
-      usage( argv[ 0 ] );
+      usage( argv[0] );
       return EXIT_FAILURE;
     }
 
-    const string thunk_filename = argv[ 1 ];
+    const string thunk_filename = argv[1];
     const roost::path thunk_path = roost::canonical( thunk_filename );
 
     vector<string> args = { "gg-force", thunk_filename };
     run( "gg-force", args, {}, true, true );
     CheckSystemCall( "execv", execv( thunk_path.string().c_str(), ++argv ) );
-  }
-  catch ( const exception &  e ) {
-    print_exception( argv[ 0 ], e );
+  } catch ( const exception& e ) {
+    print_exception( argv[0], e );
     return EXIT_FAILURE;
   }
 }

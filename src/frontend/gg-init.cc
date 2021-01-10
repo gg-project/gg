@@ -6,13 +6,14 @@
 #include "util/path.hh"
 
 using namespace std;
+using namespace gg;
 
-void usage( const char * argv0 )
+void usage( const char* argv0 )
 {
   cerr << argv0 << " [directory]" << endl;
 }
 
-int main( int argc, char * argv[] )
+int main( int argc, char* argv[] )
 {
   try {
     if ( argc <= 0 ) {
@@ -20,20 +21,20 @@ int main( int argc, char * argv[] )
     }
 
     if ( argc > 2 ) {
-      usage( argv[ 0 ] );
+      usage( argv[0] );
       return EXIT_FAILURE;
     }
 
-    roost::path gg_dir = ( argc == 1 ) ? ( roost::current_working_directory() / ".gg" )
-                                       : argv[ 1 ];
+    roost::path gg_dir = ( argc == 1 )
+                           ? ( roost::current_working_directory() / ".gg" )
+                           : argv[1];
 
     roost::create_directories( gg_dir );
     cerr << "Initialized gg directory at: " << gg_dir.string() << endl;
 
     return EXIT_SUCCESS;
-  }
-  catch ( const exception &  e ) {
-    print_exception( argv[ 0 ], e );
+  } catch ( const exception& e ) {
+    print_exception( argv[0], e );
     return EXIT_FAILURE;
   }
 
