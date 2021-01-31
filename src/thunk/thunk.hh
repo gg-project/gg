@@ -103,6 +103,7 @@ private:
   Function function_;
   DataList values_;
   DataList thunks_;
+  DataList futures_;
   DataList executables_;
   std::vector<std::string> outputs_;
   std::vector<std::pair<std::string, std::string>> links_ {};
@@ -128,13 +129,17 @@ public:
          std::vector<DataItem>&& values,
          std::vector<DataItem>&& thunks,
          std::vector<DataItem>&& executables,
-         std::vector<std::string>&& outputs );
+         std::vector<std::string>&& outputs,
+         std::vector<DataItem>&& futures = {},
+         Optional<std::string>&& output_dir = {} );
 
   Thunk( Function&& function,
          DataList&& values,
          DataList&& thunks,
          DataList&& executables,
-         std::vector<std::string>&& outputs );
+         std::vector<std::string>&& outputs,
+         DataList&& futures,
+         Optional<std::string>&& output_dir = {} );
 
   Thunk( const gg::protobuf::Thunk& thunk_proto );
 
@@ -147,6 +152,7 @@ public:
   const Function& function() const { return function_; }
   const DataList& values() const { return values_; }
   const DataList& thunks() const { return thunks_; }
+  const DataList& futures() const { return futures_; }
   const DataList& executables() const { return executables_; }
   const std::vector<std::string>& outputs() const { return outputs_; }
   const std::vector<std::pair<std::string, std::string>>& links() const

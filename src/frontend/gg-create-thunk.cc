@@ -48,6 +48,7 @@ int main( int argc, char* argv[] )
       = { { "envar", required_argument, nullptr, 'E' },
           { "value", required_argument, nullptr, 'v' },
           { "thunk", required_argument, nullptr, 't' },
+          { "future", required_argument, nullptr, 'f' },
           { "executable", required_argument, nullptr, 'e' },
           { "output", required_argument, nullptr, 'o' },
           { "output-dir", required_argument, nullptr, 'd' },
@@ -55,6 +56,7 @@ int main( int argc, char* argv[] )
           { "placeholder", required_argument, nullptr, 'C' },
           { "timeout", required_argument, nullptr, 'T' },
           { "link", required_argument, nullptr, 'L' },
+          { "help", no_argument, nullptr, 'h' },
           { nullptr, 0, nullptr, 0 } };
 
     string placeholder_path;
@@ -65,6 +67,7 @@ int main( int argc, char* argv[] )
     vector<string> function_envars;
     vector<Thunk::DataItem> values;
     vector<Thunk::DataItem> thunks;
+    vector<Thunk::DataItem> futures;
     vector<Thunk::DataItem> executables;
     vector<string> outputs;
     map<string, string> links;
@@ -89,6 +92,10 @@ int main( int argc, char* argv[] )
 
         case 't':
           thunks.emplace_back( Thunk::string_to_data( optarg ) );
+          break;
+
+        case 'f':
+          futures.emplace_back( Thunk::string_to_data( optarg ) );
           break;
 
         case 'e':
@@ -126,6 +133,10 @@ int main( int argc, char* argv[] )
           break;
         }
 
+        case 'h':
+          usage( argv[0] );
+          return EXIT_FAILURE;
+
         default:
           throw runtime_error( "invalid option" );
       }
@@ -146,17 +157,11 @@ int main( int argc, char* argv[] )
                         move( function_args ),
                         move( function_envars ) };
 
-    Thunk thunk { move( function ),
-                  move( values ),
-                  move( thunks ),
-                  move( executables ),
-                  move( outputs ) };
+    Thunk thunk { move( function ),    move( values ),  move( thunks ),
+                  move( executables ), move( outputs ), move( futures ),
+                  move( output_dir ) };
 
     thunk.set_timeout( timeout );
-
-    if ( output_dir.initialized() ) {
-      thunk.set_ouput_dir( output_dir.get() );
-    };
 
     for ( auto& link : links ) {
       thunk.add_link( link.first, link.second );

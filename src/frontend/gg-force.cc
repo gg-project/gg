@@ -68,6 +68,12 @@ void usage( const char* argv0 )
     << endl
     << "  - gcloud  Executes the jobs on Google Cloud Functions" << endl
     << endl
+    << "Options:" << endl
+    << "  -j, --jobs         Number of workers to allow the next engine" << endl
+    << "  -e, --engine       The engine to use to execute thunks" << endl
+    << "  -s, --no-status    Do not display the status overlay" << endl
+    << "  -h, --help         Print this message" << endl
+    << endl
     << "Environment variables:" << endl
     << "  - " << FORCE_NO_STATUS << endl
     << "  - " << FORCE_DEFAULT_ENGINE << endl
@@ -190,6 +196,7 @@ int main( int argc, char* argv[] )
       { "timeout-multiplier", required_argument, nullptr, 'T' },
       { "engine", required_argument, nullptr, 'e' },
       { "fallback-engine", required_argument, nullptr, 'f' },
+      { "help", no_argument, nullptr, 'h' },
       { "no-download", no_argument, nullptr, 'd' },
       { nullptr, 0, nullptr, 0 },
     };
@@ -229,6 +236,10 @@ int main( int argc, char* argv[] )
             move( parse_engine( optarg, max_jobs ) ) );
           total_max_jobs += max_jobs;
           break;
+
+        case 'h':
+          usage( argv[0] );
+          return EXIT_FAILURE;
 
         case 'd':
           no_download = true;
