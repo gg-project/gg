@@ -70,6 +70,7 @@ Thunk::Thunk( const Function& function,
   : function_( function )
   , values_()
   , thunks_()
+  , futures_()
   , executables_( executables.cbegin(), executables.cend() )
   , outputs_( outputs )
 {
@@ -94,6 +95,7 @@ Thunk::Thunk( Function&& function,
   : function_( move( function ) )
   , values_()
   , thunks_()
+  , futures_()
   , executables_()
   , outputs_( move( outputs ) )
 {
@@ -119,12 +121,16 @@ Thunk::Thunk( Function&& function,
               vector<DataItem>&& values,
               vector<DataItem>&& thunks,
               vector<DataItem>&& executables,
-              vector<string>&& outputs )
+              vector<string>&& outputs,
+              std::vector<DataItem>&& futures,
+              Optional<std::string>&& output_dir )
   : function_( move( function ) )
   , values_()
   , thunks_()
+  , futures_()
   , executables_()
   , outputs_( move( outputs ) )
+  , output_dir_( move( output_dir ) )
 {
   for ( DataItem& item : values ) {
     values_.emplace( move( item ) );
@@ -138,6 +144,10 @@ Thunk::Thunk( Function&& function,
     executables_.emplace( move( item ) );
   }
 
+  for ( DataItem& item : futures ) {
+    futures_.emplace( move( item ) );
+  }
+
   throw_if_error();
 }
 
@@ -145,12 +155,16 @@ Thunk::Thunk( Function&& function,
               DataList&& values,
               DataList&& thunks,
               DataList&& executables,
-              vector<string>&& outputs )
+              vector<string>&& outputs,
+              DataList&& futures,
+              Optional<std::string>&& output_dir )
   : function_( move( function ) )
   , values_( move( values ) )
   , thunks_( move( thunks ) )
+  , futures_( move( futures ) )
   , executables_( move( executables ) )
   , outputs_( move( outputs ) )
+  , output_dir_( move( output_dir ) )
 {
   throw_if_error();
 }
@@ -169,6 +183,10 @@ Thunk::Thunk( const gg::protobuf::Thunk& thunk_proto )
 
   for ( const string& item : thunk_proto.thunks() ) {
     thunks_.emplace( string_to_data( item ) );
+  }
+
+  for ( const string& item : thunk_proto.futures() ) {
+    futures_.emplace( string_to_data( item ) );
   }
 
   for ( const string& item : thunk_proto.executables() ) {
@@ -220,6 +238,7 @@ int Thunk::execute() const
   // preparing envp
   envars.insert( envars.end(),
                  {
+                   "__GG_THUNK_HASH__=" + hash(),
                    "__GG_THUNK_PATH__=" + thunk_path.string(),
                    "__GG_DIR__=" + gg::paths::blobs().string(),
                    "__GG_ENABLED__=1",
@@ -295,6 +314,9 @@ protobuf::Thunk Thunk::to_protobuf() const
   for ( const auto& h : thunks_ ) {
     thunk_proto.add_thunks( data_to_string( h ) );
   }
+  for ( const auto& h : futures_ ) {
+    thunk_proto.add_futures( data_to_string( h ) );
+  }
   for ( const auto& h : executables_ ) {
     thunk_proto.add_executables( data_to_string( h ) );
   }
@@ -320,7 +342,7 @@ protobuf::Thunk Thunk::to_protobuf() const
 bool Thunk::operator==( const Thunk& other ) const
 {
   return ( function_ == other.function_ ) and ( values_ == other.values_ )
-         and ( thunks_ == other.thunks_ )
+         and ( thunks_ == other.thunks_ ) and ( futures_ == other.futures_ )
          and ( executables_ == other.executables_ )
          and ( outputs_ == other.outputs_ ) and ( timeout_ == other.timeout_ );
 }
@@ -376,8 +398,8 @@ void Thunk::update_data( const string& original_hash,
 
   bool first_output = true;
 
-  /* NOTE Okay, to prevent a performance hit here, we say that the first output
-  must never be referenced with its tag */
+  /* NOTE Okay, to prevent a performance hit here, we say that the first
+  output must never be referenced with its tag */
   for ( const auto& output : outputs ) {
     const string old_hash = ( first_output )
                               ? original_hash
@@ -388,25 +410,28 @@ void Thunk::update_data( const string& original_hash,
           ? output.hash
           : hash::for_output( output.hash, output.tag );
 
-    auto result = thunks_.equal_range( old_hash );
+    auto update_deps = [&old_hash, &new_hash, this]( DataList& fn_deps ) {
+      vector<string> old_names;
+      auto result = fn_deps.equal_range( old_hash );
 
-    vector<string> old_names;
-
-    for ( auto it = result.first; it != result.second; ) {
-      old_names.emplace_back( move( it->second ) );
-      it = thunks_.erase( it );
-    }
-
-    for ( const auto& old_name : old_names ) {
-      switch ( hash::type( new_hash ) ) {
-        case ObjectType::Thunk:
-          thunks_.insert( { new_hash, old_name } );
-          break;
-        case ObjectType::Value:
-          values_.insert( { new_hash, old_name } );
-          break;
+      for ( auto it = result.first; it != result.second; ) {
+        old_names.emplace_back( move( it->second ) );
+        it = fn_deps.erase( it );
       }
-    }
+
+      for ( const auto& old_name : old_names ) {
+        switch ( hash::type( new_hash ) ) {
+          case ObjectType::Thunk:
+            thunks_.insert( { new_hash, old_name } );
+            break;
+          case ObjectType::Value:
+            values_.insert( { new_hash, old_name } );
+            break;
+        }
+      }
+    };
+    update_deps( thunks_ );
+    update_deps( futures_ );
 
     /* let's update the args/envs as necessary */
     const string srcstr = data_placeholder( old_hash );

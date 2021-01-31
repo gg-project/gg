@@ -1,6 +1,7 @@
 /* -*-mode:c++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 
-#pragma once
+#ifndef REDUCTOR_HH
+#define REDUCTOR_HH
 
 #include <chrono>
 #include <deque>
@@ -30,12 +31,14 @@ private:
   };
 
   const std::vector<std::string> target_hashes_;
-  std::unordered_set<std::string> remaining_targets_;
+  std::vector<std::string> remaining_targets_;
   bool status_bar_;
+  bool record_exec_metadata_;
 
-  ExecutionGraph dep_graph_ {};
+  ExecutionGraph dep_graph_;
 
   std::deque<std::string> job_queue_ {};
+  std::unordered_set<std::string> enqueued_jobs_ {};
   std::unordered_map<std::string, JobInfo> running_jobs_ {};
   size_t finished_jobs_ { 0 };
   float estimated_cost_ { 0.0 };
@@ -66,7 +69,9 @@ public:
             const std::chrono::milliseconds default_timeout
             = std::chrono::milliseconds { 0 },
             const size_t timeout_multiplier = 1,
-            const bool status_bar = false );
+            const bool status_bar = false,
+            const bool record_exec_metadata = false,
+            const bool log_renames = false );
 
   std::vector<std::string> reduce();
   void upload_dependencies() const;
@@ -75,3 +80,5 @@ public:
 };
 
 } // namespace gg
+
+#endif /* REDUCTOR_HH */

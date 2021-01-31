@@ -143,6 +143,12 @@ roost::path remotes()
   return index_path;
 }
 
+roost::path renames()
+{
+  const static roost::path index_path = get_gg_cache_inner_dir( "renames" );
+  return index_path;
+}
+
 roost::path hash_cache()
 {
   const static roost::path hash_cache_path
@@ -197,6 +203,11 @@ roost::path remote( const string& hash )
   }
 
   return remote_dir;
+}
+
+roost::path rename( const string& hash )
+{
+  return renames() / hash;
 }
 
 roost::path hash_cache_entry( const string& filename,

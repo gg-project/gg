@@ -8,4 +8,8 @@ AlwaysBreakAfterDefinitionReturnType: None
 SpaceBeforeCpp11BracedList: true
 BreakBeforeBinaryOperators: All
 FixNamespaceComments: true
+---
+Language: Proto
+# Don't format .proto files.
+DisableFormat: true
 ...
