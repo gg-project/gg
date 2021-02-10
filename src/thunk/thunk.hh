@@ -3,8 +3,6 @@
 #pragma once
 
 #include <chrono>
-#include <crypto++/base64.h>
-#include <crypto++/files.h>
 #include <functional>
 #include <limits>
 #include <map>

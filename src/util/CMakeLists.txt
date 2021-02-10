@@ -11,6 +11,8 @@ add_library(util exception.hh
     digest.cc
     base64.hh
     base64.cc
+    base16.hh
+    base16.cc
     system_runner.hh
     system_runner.cc
     temp_file.hh

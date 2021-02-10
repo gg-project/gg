@@ -2,9 +2,6 @@
 
 #include "ggutils.hh"
 
-#include <crypto++/base64.h>
-#include <crypto++/hex.h>
-#include <crypto++/sha.h>
 #include <fcntl.h>
 #include <iomanip>
 #include <sstream>
@@ -13,6 +10,8 @@
 #include <unistd.h>
 
 #include "thunk_reader.hh"
+#include "util/base16.hh"
+#include "util/base64.hh"
 #include "util/digest.hh"
 #include "util/exception.hh"
 #include "util/file_descriptor.hh"
@@ -21,7 +20,6 @@
 #include "util/xdg.hh"
 
 using namespace std;
-using namespace CryptoPP;
 
 namespace gg {
 
@@ -368,10 +366,7 @@ string to_hex( const string& gghash )
   replace( hash.begin(), hash.end(), '.', '-' );
   hash += '=';
 
-  StringSource s(
-    hash,
-    true,
-    new Base64URLDecoder( new HexEncoder( new StringSink( output ), false ) ) );
+  output = base16::encode( base64::decode( hash ) );
 
   if ( output.length() == 64 ) {
     return output;

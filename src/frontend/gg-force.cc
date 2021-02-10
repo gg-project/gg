@@ -3,6 +3,7 @@
 #include <cstdlib>
 #include <getopt.h>
 #include <iostream>
+#include <fstream>
 #include <sys/resource.h>
 #include <sys/time.h>
 #include <thread>
