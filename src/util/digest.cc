@@ -18,6 +18,10 @@ string digest::sha256( const string& input )
   SHA256_Init( &sha256 );
   SHA256_Update( &sha256, input.c_str(), input.length() );
   SHA256_Final( hash, &sha256 );
-  string b64 = base64::encode( string( hash, hash + SHA256_DIGEST_LENGTH ) );
+  string b64 = base64::url_encode( string( hash, hash + SHA256_DIGEST_LENGTH ) );
+  while (b64[b64.size()-1] == '=')
+  {
+    b64.pop_back();
+  }
   return b64;
 }
