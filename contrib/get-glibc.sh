@@ -6,3 +6,4 @@ mkdir build
 cd build
 ../configure --prefix=$(pwd)/../../install --enable-static-nss
 make -j $(nproc)
+make install

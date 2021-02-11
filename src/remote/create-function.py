@@ -110,7 +110,7 @@ def main():
                         default=os.environ.get('GG_LAMBDA_ROLE'))
     parser.add_argument('--region', dest='region', default=os.environ.get('AWS_REGION'), action='store')
     parser.add_argument('--gg-execute-static', dest='gg_execute_static',
-                        default=shutil.which("gg-execute-static"))
+                        default=shutil.which("gg-execute"))
     parser.add_argument('--gg-meow-worker', dest='gg_meow_worker',
                         default=shutil.which("gg-meow-worker"))
     parser.add_argument('--toolchain-path', dest='toolchain_path', required=True)

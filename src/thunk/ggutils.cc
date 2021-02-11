@@ -377,7 +377,7 @@ string to_hex( const string& gghash )
   replace( hash.begin(), hash.end(), '.', '-' );
   hash += '=';
 
-  output = base16::encode( base64::decode( hash ) );
+  output = base16::encode( base64::url_decode( hash ) );
 
   if ( output.length() == 64 ) {
     return output;
