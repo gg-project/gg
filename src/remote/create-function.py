@@ -19,7 +19,7 @@ PACKAGE_GG_DIR = "_gg"
 
 functions = [
     ("lambda", []), # the generic function
-    ("meow", []),
+    #("meow", []),
 
     #["gcc", "cc1"],
     #["gcc", "as"],
@@ -113,7 +113,7 @@ def main():
                         default=shutil.which("gg-execute"))
     parser.add_argument('--gg-meow-worker', dest='gg_meow_worker',
                         default=shutil.which("gg-meow-worker"))
-    parser.add_argument('--toolchain-path', dest='toolchain_path', required=True)
+    parser.add_argument('--toolchain-path', dest='toolchain_path', required=False)
 
     args = parser.parse_args()
 
