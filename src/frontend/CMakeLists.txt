@@ -55,7 +55,7 @@ else()
     add_gg_exec(gg-execute execution net protobufs execution thunk)
 endif()
 
-install(FILES
+install(PROGRAMS
     ${PROJECT_SOURCE_DIR}/tools/lambda_bins/gg-execute-lambda
     ${PROJECT_SOURCE_DIR}/tools/lambda_bins/gg-collect-lambda
     ${PROJECT_SOURCE_DIR}/tools/lambda_bins/gg-create-thunk-lambda
