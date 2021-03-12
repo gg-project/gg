@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import glob
 import os
 
 GG_DIR = os.environ.get('GG_DIR')
@@ -13,6 +14,11 @@ if not os.path.isabs(GG_DIR):
 class GGPaths:
     blobs = os.path.join(GG_DIR, "blobs")
     reductions = os.path.join(GG_DIR, "reductions")
+
+    @staticmethod
+    def outputs(thunk_hash):
+        """ Given a thunk hash, return a list of all output tags for it, in the cache """
+        return [p[p.find("#") + 1:] for p in glob.glob(f"{GGPaths.reduction_path(thunk_hash)}#*")]
 
     @classmethod
     def blob_path(cls, blob_hash):
