@@ -32,13 +32,13 @@ import enum
 import re
 
 
-SHEBANG_RE = "^#! */usr/bin/env +python3.7"
+SHEBANG_RE = "^#! */usr/bin/env +python3"
 
 MODULE_NAME = "pygg"
 IMPORT_WRAPPER_HASH_ENVVAR = "IMPORT_WRAPPER_HASH"
 SCRIPT_NAME_ENVVAR = "SCRIPT_NAME_ENVVAR"
 DEFAULT_OUT = "out"
-REQUIRED_BINS = ["gg-create-thunk", "gg-hash"]
+REQUIRED_BINS = ["gg-create-thunk-lambda", "gg-hash-lambda"]
 GG_OUTPUT_DIR = "anonymous_outputs"
 
 Hash = str
@@ -391,7 +391,7 @@ class GG:
 
     def _hash_file(self, path: str) -> Hash:
         return (
-            sub.check_output([self.bin("gg-hash").path(), path]).decode().strip()
+            sub.check_output([self.bin("gg-hash-lambda").path(), path]).decode().strip()
         )
 
     def _assert_thunk_fn(self, fn_name: str, in_thunk_fn: bool) -> None:
@@ -583,7 +583,7 @@ class GG:
         loc_args = self._thunk_location_args(dest_path)
         cmd_args = list(
             it.chain(
-                [self.bin("gg-create-thunk").path()],
+                [self.bin("gg-create-thunk-lambda").path()],
                 ["--output-dir", GG_OUTPUT_DIR],
                 value_args,
                 thunk_args,

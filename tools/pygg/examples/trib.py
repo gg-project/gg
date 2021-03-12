@@ -1,4 +1,4 @@
-#!/usr/bin/env python3.7
+#!/usr/bin/env python3
 # ARGS: trib 5
 # RESULT: 11
 import pygg

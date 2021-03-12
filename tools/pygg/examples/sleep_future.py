@@ -1,4 +1,4 @@
-#!/usr/bin/env python3.7
+#!/usr/bin/env python3
 # ARGS: sleep_many 2 4 6
 # RESULT: 2
 # Copied

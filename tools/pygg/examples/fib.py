@@ -1,4 +1,4 @@
-#!/usr/bin/env python3.7
+#!/usr/bin/env python3
 # ARGS: fib 5
 # RESULT: 5
 # Copied

@@ -1,4 +1,4 @@
-#!/usr/bin/env python3.7
+#!/usr/bin/env python3
 # ARGS: add 0 20
 # RESULT: 20
 # Copied
