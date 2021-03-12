@@ -71,7 +71,7 @@ void AWSLambdaExecutionEngine::force_thunk( const Thunk& thunk,
 
       /* print the output, if there's any */
       if ( response.stdout.length() ) {
-        cerr << response.stdout << endl;
+        cerr << "Output:\n" << response.stdout << "\nEnd Output" << endl;
       }
 
       switch ( response.status ) {
