@@ -41,8 +41,17 @@ jobs:
     - name: Setup Build Dir
       run: mkdir build
     - name: Configure
-      run: cmake ..
+      run: cmake -DCMAKE_INSTALL_PREFIX="$GITHUB_WORKSPACE/install" ..
       working-directory: build
     - name: Build
       run: make -j2
       working-directory: build
+    - name: Install
+      run: make install -j2
+      working-directory: build
+    - name: Set PATH
+      run: echo "$GITHUB_WORKSPACE/install/bin" >> $GITHUB_PATH
+      working-directory: build
+    - name: Check pygg
+      run: make check
+      working-directory: tools/pygg

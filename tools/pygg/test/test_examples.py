@@ -35,7 +35,7 @@ class ExampleTest(TestCase):
                 result = res.group(1)
 
                 with tempfile.TemporaryDirectory() as d:
-                    py = sh.which("python3.7")
+                    py = sh.which("python3")
                     force = sh.which("gg-force")
                     assert py is not None
                     assert force is not None
