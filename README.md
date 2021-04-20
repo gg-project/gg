@@ -22,45 +22,29 @@ Building FFmpeg with `gg` on AWS Lambda
 
 ## Build directions
 
-**Notice: If you are Docker adept, follow [this instruction](https://github.com/StanfordSNR/gg/blob/master/docker/README.md).**
+### Install Dependencies
 
-To build `gg` you need the following packages:
+You'll need the following: OpenSSL, ncurses, libcap, protobuf, and hiredis.
 
-- `gcc` >= 7.0
-- `protobuf-compiler`, `libprotobuf-dev` >= 3.0
-- `libcrypto++-dev` >= 5.6.3
-- `python3`
-- `libcap-dev`
-- `libncurses5-dev`
-- `libboost-dev`
-- `libssl-dev`
-- `autopoint`
-- `help2man`
-- `texinfo`
-- `automake`
-- `libtool`
-- `pkg-config`
-- `libhiredis-dev`
-- `python3-boto3`
+On Ubuntu: `apt-get install libssl-dev libcap-dev libcap-dev libncurses5-dev
+libhiredis-dev protobuf-compiler libprotobuf-dev`.
 
-You can install this dependencies in Ubuntu (17.04 or newer) by running:
+### Build Process
 
-```
-sudo apt-get install gcc-7 g++-7 protobuf-compiler libprotobuf-dev \
-                     libcrypto++-dev libcap-dev \
-                     libncurses5-dev libboost-dev libssl-dev autopoint help2man \
-                     libhiredis-dev texinfo automake libtool pkg-config python3-boto3
-```
+`mkdir build && cd build && cmake .. && make -j $(nproc)`
 
-To build `gg`, run the following commands:
+### Installation
 
-```
-./fetch-submodules.sh
-./autogen.sh
-./configure
-make -j$(nproc)
-sudo make install
-```
+To install the gg command line tool suite, run `make install` in the build
+directory.
+
+To install the pygg python interface to gg, add `tools/pygg` to your
+`PYTHONPATH`.
+
+### Tests
+
+Run `make check` in the `tools/pygg` directory. You'll need to install `pygg`
+and `gg` first.
 
 ## Usage
 
@@ -78,51 +62,58 @@ permissions.
 - `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` => your AWS access key
 - `AWS_REGION` => your AWS region, where the functions are installed
 
-### Installing the Functions
+### Uploading the runtime to AWS Lambda
 
-After setting the environment variables, you need to install `gg` functions on
-AWS Lambda. To do so:
+To execute computations on AWS lambda, GG's runtime must be installed to your
+lambda function.
+gg ships with a pre-built lambda runtime. You can upload it to your lambda
+function by setting the above environmental variables, and running `make
+ggfunctions` in the build directory.
 
-~~~
-cd src/remote/
-make ggfunctions
-~~~
+### Building the Lambda runtime yourself
 
-### Example
+If you'd like to build the Lambda runtime yourself, we recommend using Docker
+to cross-build. Run `DOCKER_BUILDKIT=1 docker build --output tools/lambda_bins
+.` from the root of the repository.
 
-To build [`mosh`](https://github.com/mobile-shell/mosh) using `gg`, first we
-checkout the mosh source code:
+### pygg Example
 
-~~~
-git clone https://github.com/mobile-shell/mosh
-~~~
+The easiest way to use gg is through pygg. Pygg allows one to represent gg
+thunks as (decorated) python functions. Here is an example of a fibonacci
+function:
 
-Make sure that you have all the dependencies for building `mosh`. In Ubuntu,
-you can run:
+```python
+#!/usr/bin/env python3
+import pygg
 
-~~~
-sudo apt-get install -y automake libtool g++ protobuf-compiler libprotobuf-dev \
-                        libboost-dev libutempter-dev libncurses5-dev \
-                        zlib1g-dev libio-pty-perl libssl-dev pkg-config
-~~~
+gg = pygg.init() # Set-up the GG runtime
 
-Inside the `mosh` directory, first you need to prepare `mosh` to build:
 
-~~~
-./autogen.sh
-./configure
-~~~
+@gg.thunk_fn() # Calls to this fn can be embedded in a dependency graph
+def fib(n: int) -> pygg.Output:
+    if n < 2:
+        return gg.str_value(str(n)) # Create a gg.Value from a string
+    else:
+        a = gg.thunk(fib, n - 1) # Create a thunk for fib(n-1)
+        b = gg.thunk(fib, n - 2) # Create a thunk for fib(n-2)
+        return gg.thunk(add_str, a, b) # Build a new thunk dependent on those, returning it
 
-Then,
 
-~~~
-gg init # creates .gg directory
-gg infer make -j$(nproc) # creates the thunks
-~~~
+@gg.thunk_fn()
+def add_str(a: pygg.Value, b: pygg.Value) -> pygg.Output:
+    ai = int(a.as_str()) # Get the string contents of a gg.Value
+    bi = int(b.as_str())
+    return gg.str_value(str(ai + bi)) # Do the addition, return a new gg.Value
 
-Now, to actually compile `mosh-server` on AWS Lambda with 100-way parallelism,
-you can execute (it's important that `--jobs` comes before `--engine`):
 
-~~~
-gg force --jobs 100 --engine lambda src/frontend/mosh-server
-~~~
+gg.main() # Yield control to the gg runtime
+```
+
+How do we use this script?
+
+  1. Enter the `tools/pygg/examples` directory.
+  2. `./fib.py init fib 5`
+  3. `gg-force --jobs 1 --engine local ./out && cat ./out`
+  4. (for remote execution): `gg-force --jobs 1 --engine lambda ./out && cat ./out`
+
+You can find a description of the pygg library in `tools/pygg/README.md`.

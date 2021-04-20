@@ -28,8 +28,7 @@ computations.
 Let's start with an annotated example:
 
 ```
-#!/usr/bin/env python3.7                # Make this portably executable
-                                        # AWS Lambda requires python3.7
+#!/usr/bin/env python3                  # Make this portably executable
 
 import pygg                             # Import the library
 gg = pygg.init()                        # Initilize the runtime
