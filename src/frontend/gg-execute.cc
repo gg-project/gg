@@ -339,12 +339,13 @@ int main( int argc, char* argv[] )
       { "put-output", no_argument, nullptr, 'p' },
       { "cleanup", no_argument, nullptr, 'C' },
       { "timelog", no_argument, nullptr, 'T' },
+      { "help", no_argument, nullptr, 'h' },
       { nullptr, 0, nullptr, 0 },
     };
 
     while ( true ) {
       const int opt
-        = getopt_long( argc, argv, "gpCT", command_line_options, nullptr );
+        = getopt_long( argc, argv, "hgpCT", command_line_options, nullptr );
 
       if ( opt == -1 ) {
         break;
@@ -354,6 +355,9 @@ int main( int argc, char* argv[] )
         case 'g':
           get_dependencies = true;
           break;
+        case 'h':
+          usage( argv[0] );
+          return EXIT_SUCCESS;
         case 'p':
           put_output = true;
           break;
