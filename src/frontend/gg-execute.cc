@@ -32,7 +32,7 @@ using namespace gg::thunk;
 using ReductionResult = gg::cache::ReductionResult;
 
 const bool sandboxed = ( getenv( "GG_SANDBOXED" ) != NULL );
-const string temp_dir_template = "/tmp/thunk-execute";
+const string temp_dir_template = safe_getenv_or("GG_THUNK_EXECUTE_TEMPLATE", "/tmp/thunk-execute");
 const string temp_file_template = "/tmp/thunk-file";
 
 vector<string> execute_thunk( const Thunk& original_thunk )
@@ -310,6 +310,9 @@ void usage( const char* argv0 )
        << " -C, --cleanup           Remove unnecessary blobs in .gg dir" << endl
        << " -T, --timelog           Produce timing log for this execution"
        << endl
+       << "Options: " << endl
+       << " GG_THUNK_EXECUTE_TEMPLATE: tmpdir template for thunk execution folders." << endl
+       << "                            default: /tmp/thunk-execute" << endl
        << endl;
 }
 
