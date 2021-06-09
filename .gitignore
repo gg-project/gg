@@ -32,7 +32,6 @@ Makefile.in
 
 .idea
 .env
-CMakeLists.txt
 cmake-build-debug
 .DS_Store
 ._.DS_Store
