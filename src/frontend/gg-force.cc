@@ -78,6 +78,8 @@ void usage( const char* argv0 )
     << "  - " << FORCE_NO_STATUS << endl
     << "  - " << FORCE_DEFAULT_ENGINE << endl
     << "  - " << FORCE_TIMEOUT << endl
+    << "  - GG_THUNK_EXECUTE_TEMPLATE: tmpdir template for thunk execution folders." << endl
+    << "                               default: /tmp/thunk-execute" << endl
     << endl;
 }
 

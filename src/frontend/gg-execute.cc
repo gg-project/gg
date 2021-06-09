@@ -310,7 +310,7 @@ void usage( const char* argv0 )
        << " -C, --cleanup           Remove unnecessary blobs in .gg dir" << endl
        << " -T, --timelog           Produce timing log for this execution"
        << endl
-       << "Options: " << endl
+       << "Environment Variables: " << endl
        << " GG_THUNK_EXECUTE_TEMPLATE: tmpdir template for thunk execution folders." << endl
        << "                            default: /tmp/thunk-execute" << endl
        << endl;
