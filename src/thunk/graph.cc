@@ -61,26 +61,18 @@ HashSet ExecutionGraph::add_thunk( const Hash& full_hash )
 {
   if ( verbose )
     cerr << "Adding thunk: " << full_hash << endl;
-  const auto retval = _add_thunk_common( full_hash );
-  for ( const auto& o1 : retval.second ) {
+  HashSet o1s;
+  ComputationId _id = _add_thunk_common( full_hash, o1s );
+  for ( const auto& o1 : o1s ) {
     if ( verbose )
       cerr << "  exec " << ids_.at( o1 ) << " as " << o1 << endl;
     ThunkWriter::write( computations_.at( ids_.at( o1 ) ).thunk );
   }
-  return retval.second;
+  return o1s;
 }
 
-std::pair<ComputationId, HashSet> ExecutionGraph::_add_inner_thunk(
-  const Hash& full_hash )
-{
-  if ( verbose )
-    cerr << "  Adding inner thunk: " << full_hash << endl;
-  const auto retval = _add_thunk_common( full_hash );
-  return retval;
-}
-
-std::pair<ComputationId, HashSet> ExecutionGraph::_add_thunk_common(
-  const Hash& full_hash )
+ComputationId ExecutionGraph::_add_thunk_common( const Hash& full_hash,
+                                                 HashSet& o1s )
 {
   // Strip output name
   const string hash = gg::hash::base( full_hash );
@@ -89,10 +81,10 @@ std::pair<ComputationId, HashSet> ExecutionGraph::_add_thunk_common(
   if ( ids_.count( hash ) ) {
     if ( verbose )
       cerr << "  duplicate: " << ids_.at( hash ) << endl;
-    return { ids_.at( hash ), {} };
+    return ids_.at( hash );
   }
 
-  // Get thunk
+  // Otherwise, get the hash's thunk
   Thunk thunk { ThunkReader::read( gg::paths::blob( hash ), hash ) };
 
   // Add blob dependencies
@@ -103,79 +95,43 @@ std::pair<ComputationId, HashSet> ExecutionGraph::_add_thunk_common(
     blob_dependencies_.emplace( item.first );
   }
 
-  // Create node in the graph
+  // Build node in graph
   ComputationId id = next_id_++;
-  unordered_set<Hash> new_o1s = _emplace_thunk( id, move( thunk ) );
+  auto r = computations_.emplace( id, Computation { move( thunk ) } );
+  Computation& computation = ( r.first )->second;
+  ids_.emplace( hash, id );
 
-  if ( verbose )
-    cerr << "  new id: " << id << endl;
-  return { id, new_o1s };
-}
+  n_thunks_++;
 
-std::unordered_set<Hash> ExecutionGraph::_emplace_thunk(
-  ComputationId id,
-  gg::thunk::Thunk&& thunk )
-{
-  // Executable hashes. Will be returned.
-  unordered_set<Hash> new_o1s;
-
-  // First, put the computation into the graph
-  if ( computations_.count( id ) ) {
-    Computation& computation = computations_.at( id );
-    computation.thunk = move( thunk );
-  } else {
-    computations_.emplace( id, Computation { move( thunk ) } );
+  // Add dependencies, registering O(1) dependencies
+  for ( const Thunk::DataItem& item : computation.thunk.thunks() ) {
+    const string child_hash = gg::hash::base( item.first );
+    ComputationId child_id = _add_thunk_common( child_hash, o1s );
+    _create_dependency( id, child_hash, child_id );
+  }
+  for ( const Thunk::DataItem& item : computation.thunk.futures() ) {
+    const string child_hash = gg::hash::base( item.first );
+    ComputationId child_id = _add_thunk_common( child_hash, o1s );
+    _create_dependency( id, child_hash, child_id );
   }
 
-  // Check the hash.
-  Computation& computation = computations_.at( id );
-  const Hash hash = computation.thunk.hash();
-  if ( ids_.count( hash ) ) {
-    // If we already have a computation with this hash, link our node to it.
-    const ComputationId target_id = ids_.at( hash );
-    computation.is_link_ = true;
-    const auto removed = _cut_dependencies( id );
-    _update( target_id );
-    _create_dependency( id, hash, target_id );
-  } else {
-    // If not, add dependencies
-    n_thunks_++;
-    for ( const Thunk::DataItem& item : computation.thunk.thunks() ) {
-      const string child_hash = gg::hash::base( item.first );
-      const auto child_id_and_o1s = _add_inner_thunk( child_hash );
-      _create_dependency( id, child_hash, child_id_and_o1s.first );
-      new_o1s.insert( child_id_and_o1s.second.begin(),
-                      child_id_and_o1s.second.end() );
-    }
-    for ( const Thunk::DataItem& item : computation.thunk.futures() ) {
-      const string child_hash = gg::hash::base( item.first );
-      const auto child_id_and_o1s = _add_inner_thunk( child_hash );
-      _create_dependency( id, child_hash, child_id_and_o1s.first );
-      new_o1s.insert( child_id_and_o1s.second.begin(),
-                      child_id_and_o1s.second.end() );
-    }
-    if ( computation.thunk.futures().empty()
-         and computation.thunk.thunks().empty() ) {
-      new_o1s.insert( hash );
-    }
+  // Register us, if we're O(1)
+  if ( computation.thunk.can_be_executed() ) {
+    o1s.insert( computation.thunk.hash() );
   }
 
   // Update our thunk.
   _update( id );
 
   if ( verbose ) {
-    cerr << "  id: " << id << " deps: ";
+    cerr << "  new id: " << id << " deps: ";
     for ( const auto& dep : computation.deps ) {
       cerr << dep << " ";
     }
     cerr << endl;
   }
 
-  if ( computation.thunk.can_be_executed() ) {
-    new_o1s.insert( computation.thunk.hash() );
-  }
-
-  return new_o1s;
+  return id;
 }
 
 void ExecutionGraph::_mark_out_of_date( const ComputationId id )
@@ -243,12 +199,14 @@ IdSet ExecutionGraph::_update( const ComputationId id )
       const string& hash = computation.thunk.hash();
 
       // Check if we're a link.
-      if ( ids_.count( hash ) and ids_.at( hash ) != id ) {
-        computation.is_link_ = true;
-        _cut_dependencies( id );
-        _create_dependency( id, hash, ids_.at( hash ) );
-        IdSet r = _update( id );
-        newly_executable.insert( r.begin(), r.end() );
+      if ( ids_.count( hash ) ) {
+        if ( ids_.at( hash ) != id ) {
+          computation.is_link_ = true;
+          _cut_dependencies( id );
+          _create_dependency( id, hash, ids_.at( hash ) );
+          IdSet r = _update( id );
+          newly_executable.insert( r.begin(), r.end() );
+        }
       } else {
         ids_.emplace( hash, id );
       }
@@ -496,23 +454,27 @@ ExecutionGraph::submit_reduction( const Hash& from,
   string& new_hash = outputs.front().hash;
   const gg::ObjectType new_type = gg::hash::type( new_hash );
 
-  unordered_set<Hash> new_o1s;
+  HashSet new_o1s;
   if ( new_type == gg::ObjectType::Thunk ) {
-    // A new thunk -- return leaf dependencies
-    Thunk thunk { ThunkReader::read( gg::paths::blob( new_hash ), new_hash ) };
-    // TODO check that value & executable deps are present
-    new_o1s = _emplace_thunk( id, move( thunk ) );
+    // A new thunk -- accumulate leaf dependencies
+    ComputationId new_id = _add_thunk_common( new_hash, new_o1s );
+    computation.is_link_ = true;
+    _create_dependency( id, new_hash, new_id );
+    _update( id );
   } else {
-    // A value -- return reverse dependencies
+    // A value -- set outputs
     computation.outputs = move( outputs );
-    n_thunks_--;
+  }
+  n_thunks_--;
 
-    unordered_set<ComputationId> newly_updated = _update_parent_thunks( id );
-    for ( const ComputationId parent_id : newly_updated ) {
-      Computation& parent = computations_.at( parent_id );
-      if ( parent.thunk.can_be_executed() ) {
+  // If we found no O(1) deps looking downward, look upward
+  if ( new_o1s.size() == 0 ) {
+    IdSet newly_updated = _update_parent_thunks( id );
+    for ( const ComputationId ancestor_id : newly_updated ) {
+      Computation& ancestor = computations_.at( ancestor_id );
+      if ( ancestor.thunk.can_be_executed() ) {
         // Make sure to record the hash and write the thunk before submitting
-        new_o1s.insert( parent.thunk.hash() );
+        new_o1s.insert( ancestor.thunk.hash() );
       }
     }
   }

@@ -151,11 +151,16 @@ private:
   // links.
   ComputationId _follow_links( const ComputationId id ) const;
 
-  std::pair<ComputationId, HashSet> _add_inner_thunk( const Hash& hash );
-  // Adds a computation for this thunk to the graph. A No-op if present.
-  // Returns the id of the added thunk, and the hash of any new order-one
-  // dependencies.
-  std::pair<ComputationId, HashSet> _add_thunk_common( const Hash& hash );
+  // Adds a computation for this thunk-hash to the graph.
+  //
+  // Returns the id the the computation for this thunk.
+  // Also add any new O(1) dependencies to the second argument.
+  //
+  // If the hash is known, returns the (known) id, and no new dependencies.
+  //
+  // If the hash is not known, recursively adds dependent thunks, and adds
+  // order-1 dependencies.
+  ComputationId _add_thunk_common( const Hash& hash, HashSet& o1s );
 
 public:
   // If `log_renames` is set, then the graph will record changes in thunk
