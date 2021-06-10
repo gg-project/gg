@@ -372,8 +372,14 @@ vector<string> Reductor::reduce()
 
     if ( is_finished() or poll_result.result == Poller::Result::Type::Exit ) {
       if ( not is_finished() ) {
-        throw runtime_error(
-          "unhandled poller failure happened, job is not finished" );
+        if ( job_queue_.size() == 0 ) {
+          throw runtime_error(
+            "Ran out of thunks to execute without finishing the computation.\n"
+            "This is likely a computation graph bug withing gg.");
+        } else {
+          throw runtime_error(
+            "unhandled poller failure happened, job is not finished" );
+        }
       }
 
       vector<string> final_hashes;
