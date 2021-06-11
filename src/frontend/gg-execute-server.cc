@@ -209,8 +209,10 @@ int main( int argc, char* argv[] )
                                    exec_request.storage_backend().c_str(),
                                    true );
 
+                           cerr << "command building" << endl;
+
                            vector<string> command {
-                             "gg-execute-static",
+                             "gg-execute",
                              "--get-dependencies",
                              "--put-output",
                              // "--cleanup"
