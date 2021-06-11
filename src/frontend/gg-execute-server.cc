@@ -18,6 +18,7 @@
 #include "util/base64.hh"
 #include "util/path.hh"
 #include "util/system_runner.hh"
+#include "util/util.hh"
 
 using namespace std;
 using namespace gg;
@@ -143,8 +144,21 @@ int main( int argc, char* argv[] )
                                    request_item.hash() );
 
                                  bool discard_rest = false;
-                                 for ( const auto& tag :
-                                       request_item.outputs() ) {
+
+                                 unordered_set<string> tags;
+                                 // Get normal ouputs
+                                 tags.insert(
+                                     request_item.outputs().begin(),
+                                     request_item.outputs().end());
+                                 // Get blob outputs
+                                 string glob = paths::reduction(request_item.hash()).string();
+                                 glob += "#*";
+                                 for (const auto&p: cxx_glob(glob)) {
+                                   size_t i = p.find('#');
+                                   tags.insert(p.substr(i+1));
+                                 }
+
+                                 for ( const auto& tag : tags ) {
                                    protobuf::OutputItem output_item;
                                    Optional<cache::ReductionResult> result
                                      = cache::check(

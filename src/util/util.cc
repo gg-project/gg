@@ -3,10 +3,12 @@
 #include "util.hh"
 
 #include <cstdlib>
+#include <glob.h>
 #include <iomanip>
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 using namespace std;
 
@@ -43,6 +45,24 @@ string format_bytes( size_t bytes )
   ostringstream oss;
   oss << fixed << setprecision( 1 ) << val << " " << sizes[i];
   return oss.str();
+}
+
+std::vector<std::string> cxx_glob( const std::string& glob_ )
+{
+      glob_t globbuf;
+    int err = glob(glob_.c_str(), 0, NULL, &globbuf);
+    std::vector<std::string> output;
+    if(err == 0)
+    {
+        for (size_t i = 0; i < globbuf.gl_pathc; i++)
+        {
+            output.emplace_back(globbuf.gl_pathv[i]);
+        }
+
+        globfree(&globbuf);
+    }
+
+    return output;
 }
 
 } // namespace gg
