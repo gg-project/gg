@@ -112,8 +112,43 @@ gg.main() # Yield control to the gg runtime
 How do we use this script?
 
   1. Enter the `tools/pygg/examples` directory.
-  2. `./fib.py init fib 5`
+  2. `./fib.py init fib 5` (creates a thunk file, `out`)
   3. `gg-force --jobs 1 --engine local ./out && cat ./out`
   4. (for remote execution): `gg-force --jobs 1 --engine lambda ./out && cat ./out`
 
 You can find a description of the pygg library in `tools/pygg/README.md`.
+
+### Multi-Node GG
+
+To run gg on multiple cooperating computers, using the following
+configuration:
+
+#### Worker Nodes
+
+Each worker should have `gg-execute` and `gg-execute-server` installed. It may
+be easier to build static version. The execution server is run like
+`GG_DIR=/tmp/gg gg-execute-server HOST PORT`.
+
+   * `HOST` should be the worker's host IP
+   * `PORT` should be a port it can bind to
+   * `GG_DIR` can be changed to anywhere you want GG's cache on this machine
+
+#### Leader Node
+
+The leader node needs `gg-force` installed to run thunks. It also needs pygg,
+`gg-init`, `gg-hash`, `gg-create-thunk`, and `gg-collect`, if you want to
+build thunks using a pygg script.
+```
+gg-force \
+ --jobs JOBS --engine=remote=HOST:PORT \
+ --jobs JOBS --engine=remote=HOST:PORT \
+ ...
+ --jobs JOBS --engine=remote=HOST:PORT \
+ THUNK_FILE
+```
+
+where each `(JOBS, HOST, PORT)` tuple indicates how many jobs can be
+concurrently run by the worker at `HOST:PORT`.
+
+See the section above for a description of how one might create a THUNK_FILE
+using pygg.
