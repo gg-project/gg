@@ -96,6 +96,7 @@ Reductor::Reductor( const vector<string>& target_hashes,
   , exec_engines_( move( execution_engines ) )
   , fallback_engines_( move( fallback_engines ) )
   , storage_backend_( move( storage_backend ) )
+  , verbose_( getenv( "GG_VERBOSE" ) != NULL )
 {
   cerr << "\u2192 Loading the thunks... ";
   auto graph_load_time
@@ -161,6 +162,11 @@ Reductor::Reductor( const vector<string>& target_hashes,
             break;
 
           default:
+            if ( verbose_ ) {
+              cerr << "Unknown execution failure" << endl;
+              cerr << "  Status: " << static_cast<int>(failure_reason) << endl;
+              cerr << "  Thunk: " << old_hash << endl;
+            }
             throw runtime_error( "execution failed for an unknown reason: "
                                  + old_hash );
         }

@@ -23,6 +23,8 @@
 using namespace std;
 using namespace gg;
 
+const bool verbose = ( getenv( "GG_VERBOSE" ) != NULL );
+
 string get_canned_response( const int status, const HTTPRequest& request )
 {
   const static map<int, string> status_messages = {
@@ -223,8 +225,6 @@ int main( int argc, char* argv[] )
                                    exec_request.storage_backend().c_str(),
                                    true );
 
-                           cerr << "command building" << endl;
-
                            vector<string> command {
                              "gg-execute",
                              "--get-dependencies",
@@ -233,6 +233,9 @@ int main( int argc, char* argv[] )
                            };
 
                            for ( auto& request_item : exec_request.thunks() ) {
+                             if ( verbose ) {
+                               cerr << "Adding " << request_item.hash() << " to gg-execute call" << endl;
+                             }
                              roost::atomic_create(
                                base64::decode( request_item.data() ),
                                paths::blob( request_item.hash() ) );
@@ -240,7 +243,11 @@ int main( int argc, char* argv[] )
                              command.emplace_back( request_item.hash() );
                            }
 
+                           if ( verbose ) {
+                             cerr << "Starting gg-execute" << endl;
+                           }
                            return ezexec( command[0], command, {}, true, true );
+
                 },
                 false );
             }

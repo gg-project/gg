@@ -11,10 +11,12 @@ class RedisStorageBackend : public StorageBackend
 {
 private:
   Redis client_;
+  bool verbose;
 
 public:
   RedisStorageBackend( RedisClientConfig& config )
     : client_( config )
+    , verbose( getenv( "GG_VERBOSE" ) != nullptr )
   {}
 
   void put(

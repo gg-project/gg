@@ -42,6 +42,7 @@ private:
   std::unordered_map<std::string, JobInfo> running_jobs_ {};
   size_t finished_jobs_ { 0 };
   float estimated_cost_ { 0.0 };
+  bool verbose_ { false };
 
   std::chrono::milliseconds default_timeout_;
   size_t timeout_multiplier_;
