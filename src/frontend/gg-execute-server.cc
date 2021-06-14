@@ -147,17 +147,22 @@ int main( int argc, char* argv[] )
 
                                  bool discard_rest = false;
 
-                                 unordered_set<string> tags;
+                                 vector<string> tags;
+                                 unordered_set<string> tag_set;
                                  // Get normal ouputs
-                                 tags.insert(
-                                     request_item.outputs().begin(),
-                                     request_item.outputs().end());
+                                 for (const auto& t : request_item.outputs()) {
+                                   tags.push_back(t);
+                                   tag_set.insert(t);
+                                 }
                                  // Get blob outputs
                                  string glob = paths::reduction(request_item.hash()).string();
                                  glob += "#*";
                                  for (const auto&p: cxx_glob(glob)) {
                                    size_t i = p.find('#');
-                                   tags.insert(p.substr(i+1));
+                                   string tag = p.substr(i+1);
+                                   if (!tag_set.count(tag)) {
+                                     tags.push_back(p.substr(i+1));
+                                   }
                                  }
 
                                  for ( const auto& tag : tags ) {
