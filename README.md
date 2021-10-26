@@ -61,6 +61,8 @@ functions. Must have *AmazonS3FullAccess* and *AWSLambdaBasicExecutionRole*
 permissions.
 - `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` => your AWS access key
 - `AWS_REGION` => your AWS region, where the functions are installed
+- `GG_LEAVE_CRASHED_THUNKS` => If set to "1", do not clean up the temporary
+  execution directories of crashed thunks.
 
 ### Uploading the runtime to AWS Lambda
 

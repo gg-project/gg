@@ -8,6 +8,8 @@
 #include <unistd.h>
 
 #include "exception.hh"
+#include "path.hh"
+#include "util.hh"
 #include "temp_file.hh"
 
 using namespace std;
@@ -38,7 +40,15 @@ void TempDirectory::remove()
     return;
   }
   owns_dir_ = false;
-  CheckSystemCall( "rmdir " + name(), rmdir( name().c_str() ) );
+  // Used to cleanup
+  if ( safe_getenv_or( "GG_LEAVE_CRASHED_THUNKS", "0" ) == "1" )
+  {
+    CheckSystemCall( "rmdir " + name(), rmdir( name().c_str() ) );
+  }
+  else
+  {
+    roost::remove_directory( name() );
+  }
 }
 
 UniqueDirectory::UniqueDirectory( UniqueDirectory&& other )
